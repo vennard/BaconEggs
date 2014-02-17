@@ -84,16 +84,19 @@ int sys_settickets(void)
    //get arg which is num tickets - default is 1
    if(argint(0,&n) < 1) return -1;
    //Now set tickets of calling process by n   
+   proc->tickets = n;
    return 0;
 }
 
-//returns some basic information about each running process
+//returns pstat with some basic information about each running process
 //how many times its run, pid, and which queue its on(high or low)
 int sys_getpinfo(void)
 {
-   //struct pstat *ptr;
-   //if(argint(0,ptr) < 1) return -1;
-   return 0;
+   //struct pstat* ptr;
+   //if(argint(0,&n) < 0) return -1;
+   //set data at ptr equal to local pstat  
+   //&ptr = proc->ps;
+   return 0; 
 }
 
 // return how many clock tick interrupts have occurred
