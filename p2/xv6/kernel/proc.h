@@ -11,9 +11,7 @@
 #define NSEGS     7
 
 #include "pstat.h"
-extern struct pstat *pst;
-extern int hi_tix_assigned;
-extern int lo_tix_assigned;
+extern struct pstat pst;
 
 
 // Per-CPU state

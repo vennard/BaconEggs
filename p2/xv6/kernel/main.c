@@ -4,12 +4,11 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include "pstat.h"
 
 //TODO Added for p2
 //may have to include "pstat.h"
-struct pstat *pst;
-int hi_tix_assigned = 0;
-int lo_tix_assigned = 0;
+struct pstat pst;
 
 static void bootothers(void);
 static void mpmain(void);
