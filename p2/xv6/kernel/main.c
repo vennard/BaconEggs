@@ -5,6 +5,12 @@
 #include "proc.h"
 #include "x86.h"
 
+//TODO Added for p2
+//may have to include "pstat.h"
+struct pstat *pst;
+int hi_tix_assigned = 0;
+int lo_tix_assigned = 0;
+
 static void bootothers(void);
 static void mpmain(void);
 void jmpkstack(void)  __attribute__((noreturn));

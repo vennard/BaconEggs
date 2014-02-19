@@ -10,6 +10,12 @@
 #define SEG_TSS   6  // this process's task state
 #define NSEGS     7
 
+#include "pstat.h"
+extern struct pstat *pst;
+extern int hi_tix_assigned;
+extern int lo_tix_assigned;
+
+
 // Per-CPU state
 struct cpu {
   uchar id;                    // Local APIC ID; index into cpus[] below
@@ -75,6 +81,8 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int tickets;                 // Number of tickets for scheduling lottery
+  int level;                   // 0 - high, 1 - low, 2 - means run again now
+  int ticket[255];             // Holds tickets for process
 };
 
 // Process memory is laid out contiguously, low addresses first:

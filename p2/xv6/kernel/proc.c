@@ -259,16 +259,127 @@ void
 scheduler(void)
 {
   struct proc *p;
+  int hi_tix = 0;
+  int lo_tix = 0;
 
   for(;;){
     // Enable interrupts on this processor.
     sti();
+
+    // TODO Scheduler prep code
+    // Search through procs and count # in each queue 
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE) {
+        &pst->inuse[p] = 0; //set to not in use
+        &pst->pid[p] = p->pid; //set pid
+        continue;
+      }
+      //Run twice for LOW priority queue (second run)
+      if (p->level == 2) {
+         p->level = 1; //set back to normal low priority
+         &pst->inuse[p] = 1; 
+         &pst->tickets[p] += 2;
+         //TODO execute process
+      }
+      else if(p->level == 0) {
+        &pst->inuse[p] = 1; //set to in use
+        &pst->pid[p] = p->pid; //set pid
+        //Count the number of tickets assigned at high priority
+        //Assign ticket if no ticket has been assigned
+        if (p->tickets <= 0) {
+           p->tickets = 1;
+           hi_tix_assigned++;
+           hi_tix++;
+         }
+        else {
+           hi_tix += p->tickets;
+        }
+      }
+      else if(p->level ==1) {
+        &pst->inuse[p] = 1; //set to in use
+        &pst->pid[p] = p->pid; //set pid
+        //Might want to check that it has a ticket - just to be sure
+        lo_tix += p->tickets;
+      }
+    }
+
+    //Generate & mod lottery ticket num
+    int lotto = 0 ;//TODO ADD RANDOM GEN
+    int tix;
+    if (hi_tix > 0) {
+      lotto = rnd % hi_tix; 
+      tix = hi_tix;
+    }else if (lo_tix > 0) {
+      lotto = rnd % lo_tix;
+      tix = lo_tix;
+    }
+    else {
+      lotto = -1; //fail safe
+      tix = 0;
+    }
+
+    //Generate new tickets for all proc in executing level
+    acquire(&ptable.lock);
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+       if(p->state != RUNNABLE) continue; 
+       if((hi_tix > 0)&&(p->tickets > 0)) {
+         //assign tickets   
+         int j;
+         for(j=0;j<p->tickets;j++) {
+            p->ticket[j] = hi_tix;
+            hi_tix--;
+         }
+       }     
+       if((lo_tix > 0)&&(p->tickets > 0)) {
+          //assign tickets   
+          int j;
+          for(j=0;j<p->tickets;j++) {
+             p->ticket[j] = lo_tix;
+             lo_tix--;
+          }
+       }     
+    }
+    
+   
+     
+    // TODO END OF ADDED CODE
 
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE)
         continue;
+
+      //TODO Scheduler code
+      //running hi priority queue
+      if ((p->level == 0)&&(hi_tix > 0)) {
+         //Check if process has matching ticket
+         int i;
+         //maybe add a max check for tickets (255)
+         for (i=0;i<p->tickets;p++) {
+            if(p->ticket[i] == lotto) {
+               p->level = 1;
+               &pst->hticks[p]++;
+               &pst->inuse[p] = 1; 
+               //TODO execute proc
+            }
+         }
+      }
+      //Check if proc is in lo priority queue
+      if ((p->level == 1)&&(lo_tix>0)) {
+         //Check for tickets
+         int i;
+         //maybe add a max check for tickets (255)
+         for (i=0;i<p->tickets;p++) {
+            if(p->ticket[i] == lotto) {
+               p->level = 2;  //setup proc to run twice 
+               &pst->inuse[p] = 1; 
+               //TODO execute proc
+            }
+         }
+      //TODO END OF ADDED CODE
+
 
       // Switch to chosen process.  It is the process's job
       // to release ptable.lock and then reacquire it
@@ -284,7 +395,6 @@ scheduler(void)
       proc = 0;
     }
     release(&ptable.lock);
-
   }
 }
 
