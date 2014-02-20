@@ -2,7 +2,7 @@
 #include "stat.h"
 #include "user.h"
 
-#define RND 0x9e3779b9
+#define RND 0x3e425212
 
 static uint x[4096];
 static uint b;
@@ -40,7 +40,7 @@ main(void)
   uint a = rand();
   printf(0,"random number: %d\n",a);
   int j;
-   int RUNTIME = 10000;
+   int RUNTIME = 500000;
    int results[100];
    for(j=0;j<RUNTIME;j++) {
       int rnd = rand() % 100;

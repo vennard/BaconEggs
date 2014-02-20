@@ -245,6 +245,47 @@ wait(void)
     sleep(proc, &ptable.lock);  //DOC: wait-sleep
   }
 }
+//ADDED BELOW TODO label
+#define RND 0x3e425212
+
+static uint x[4096];
+static uint b;
+
+int uptime(void)
+{
+  uint xticks;
+  
+  acquire(&tickslock);
+  xticks = ticks;
+  release(&tickslock);
+  return xticks;
+}
+
+void init(uint y) {
+   int i;
+   x[0] = y;
+   x[1] = y + RND;
+   x[2] = y + RND + RND;
+   for(i=3;i<4096;i++) x[i] = x[i-3] ^ x[i-2] ^ RND ^ i;
+}
+
+uint rand(void) {
+   static uint i = 4095;
+   uint t;
+   i = (i+1) & 4095;
+   //seed is uptime clock ticks since boot
+   //t = (1234567 * x[i]) + b;
+   t = (uptime() * x[i]) + b;
+   b = t >> 16;
+   x[i] = 0xfffffffe - t;
+   return x[i];
+}
+//Generate random #
+//Using Complementary-Multiply-with-carry method
+int get_rand(void) { 
+   init(33256246);
+   return (int) rand();
+}
 
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -269,6 +310,12 @@ scheduler(void)
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE) continue;
+         /*
+         proc = p;
+         switchuvm(p);
+         p->state = RUNNING;
+         swtch(&cpu->scheduler, proc->context);
+         switchkvm();
       //Run twice for LOW priority queue (second run)
       if (p->level == 2) {
          p->level = 1; //set back to normal low priority
@@ -279,10 +326,12 @@ scheduler(void)
          swtch(&cpu->scheduler, proc->context);
          switchkvm();
       }
-      else if(p->level == 0) {
+         */
+      if (p->level == 0) {
+      //else if(p->level == 0) {
         //Count the number of tickets assigned at high priority
         //Assign ticket if no ticket has been assigned
-        if (p->tickets <= 0) {
+       if (p->tickets <= 0) {
            p->tickets = 1;
            hi_tix++;
         } else {
@@ -297,8 +346,9 @@ scheduler(void)
     release(&ptable.lock);
 
     //Generate & mod lottery ticket num
-    int rnd = 0; //TODO put random number here
-    int lotto = 0 ;
+    //int rnd = get_rand(); //TODO put random number here
+    int rnd = 140;
+    int lotto = 0;
     int tix;
     if (hi_tix > 0) {
       lotto = rnd % hi_tix; 
@@ -332,6 +382,16 @@ scheduler(void)
        }     
     }
     release(&ptable.lock);
+/*
+         proc = p;
+         switchuvm(p);
+         p->state = RUNNING;
+         swtch(&cpu->scheduler, proc->context);
+         switchkvm();
+      proc = 0;
+  }
+}
+*/
 
     //2-Level Lottery Scheduler
     //Loop over process table to identify lottery winner
@@ -343,6 +403,18 @@ scheduler(void)
          pst.inuse[index] = 0; //set to not in use
          continue;
       }
+         proc = p;
+         switchuvm(p);
+         p->state = RUNNING;
+         swtch(&cpu->scheduler, proc->context);
+         switchkvm();
+      proc = 0;
+    }
+    release(&ptable.lock);
+  }
+}
+
+    /*
       //running hi priority queue
       if (hi_tix > 0) {
          if (p->level == 0) {
@@ -386,17 +458,21 @@ scheduler(void)
             }
          }
       }
-      //TODO END OF ADDED CODE
 
       // Process is done running for now.
       // It should have changed its p->state before coming back.
-      index++;
-      proc = 0;
-    }
+      index++;  
+      proc = 0; 
+    } 
     release(&ptable.lock);
   }
 }
+*/
 
+   
+
+//TODO END OF ADDED CODE
+ 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state.
 void
