@@ -9,7 +9,7 @@
 int
 main(void)
 {
-//Added
+//Adde
 struct pstat *ptr = 0;
 struct pstat local;
 //Testing tickets syscall
@@ -20,9 +20,14 @@ if (settickets(2) == 0) {
 }
    
 //Testing getpinfo
+// getpinfo(ptr);
 int inval = getpinfo(ptr);
+
 if (inval == 0) {
-   if(ptr == 0) printf(0,"PTR NOT SET AHHH\r\n");
+   if(ptr == 0){
+      printf(0,"PTR NOT SET AHHH\r\n");
+      exit();
+   }
    local = *ptr;
    int i;
    int max = 150;
@@ -38,12 +43,12 @@ if (inval == 0) {
    printf(0,"Print out finished \r\n");
 } else {
    printf(0,"Failed to call getpinfo!! \r\n");
-   printf(0,"But testing value does = %d  \r\n",inval);
+   printf(0,"fail val= %d  \r\n",inval);
 }
 
-/*
+
   if(fork() > 0)
     sleep(5);  // Let child exit before parent.
-*/
+
   exit();
 }

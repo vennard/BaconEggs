@@ -90,12 +90,14 @@ int sys_settickets(void)
 int sys_getpinfo(void)
 {
    struct pstat *p;
-   if(argptr(0,(void*)&p,sizeof(struct pstat*) < 0)) return -1;
+   if(argptr(0,(void*)&p,sizeof(p) < 0)) return -1;
    //set data at ptr equal to local pstat  
-   p = proc->pstat_t;
+   *p = proc->pstat_t;
+   //struct pstat *t = p;
+   //*t = pst;
    //struct pstat *ptr = (struct pstat*) p;
    //p =(char*) ptr;
-   return testing; 
+   return 0; 
 }
 
 // return how many clock tick interrupts have occurred

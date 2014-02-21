@@ -11,7 +11,7 @@
 #define NSEGS     7
 
 #include "pstat.h"
-extern struct pstat pst;
+extern volatile struct pstat pst;
 extern struct pstat *pptr;
 extern int testing;
 
@@ -83,7 +83,7 @@ struct proc {
   int tickets;                 // Number of tickets for scheduling lottery
   int level;                   // 0 - high, 1 - low, 2 - means run again now
   int ticket[255];             // Holds tickets for process
-  struct pstat* pstat_t;
+  struct pstat pstat_t;
 };
 
 // Process memory is laid out contiguously, low addresses first:

@@ -6,8 +6,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
-struct pstat pst;
-struct pstat *pptr = &pst;
+volatile struct pstat pst;
+struct pstat *pptr;
 int testing = 0;
 
 struct {
@@ -413,8 +413,8 @@ scheduler(void)
          pst.inuse[index] = 0; //set to not in use
          continue;
       }
-         p->pstat_t = &pst; 
-         testing = pst.inuse[index];
+         p->pstat_t = pst; 
+         testing = pst.pid[index];
         // p->pstat_t = &tp; //TODO
          //pptr = p->pstat_t;
          proc = p;
