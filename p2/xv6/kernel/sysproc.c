@@ -5,7 +5,6 @@
 #include "mmu.h"
 #include "proc.h"
 #include "sysfunc.h"
-#include "pstat.h"
 
 int
 sys_fork(void)
@@ -81,9 +80,7 @@ sys_sleep(void)
 int sys_settickets(void)
 {
    int n;
-   //get arg which is num tickets - default is 1
    if(argint(0,&n) < 1) return -1;
-   //Now set tickets of calling process by n   
    proc->tickets = n;
    return 0;
 }
@@ -92,12 +89,13 @@ int sys_settickets(void)
 //how many times its run, pid, and which queue its on(high or low)
 int sys_getpinfo(void)
 {
-   char *p;
-   if(argptr(0,&p,sizeof(struct pstat) < 0)) return -1;
+   struct pstat *p;
+   if(argptr(0,(void*)&p,sizeof(struct pstat*) < 0)) return -1;
    //set data at ptr equal to local pstat  
-   struct pstat *ptr = (struct pstat*) p;
-   p =(char*) ptr;
-   return 0; 
+   p = proc->pstat_t;
+   //struct pstat *ptr = (struct pstat*) p;
+   //p =(char*) ptr;
+   return testing; 
 }
 
 // return how many clock tick interrupts have occurred

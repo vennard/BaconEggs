@@ -4,11 +4,6 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
-#include "pstat.h"
-
-//TODO Added for p2
-//may have to include "pstat.h"
-struct pstat pst;
 
 static void bootothers(void);
 static void mpmain(void);

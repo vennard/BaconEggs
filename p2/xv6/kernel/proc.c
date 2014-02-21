@@ -5,7 +5,10 @@
 #include "x86.h"
 #include "proc.h"
 #include "spinlock.h"
-#include "pstat.h"
+
+struct pstat pst;
+struct pstat *pptr = &pst;
+int testing = 0;
 
 struct {
   struct spinlock lock;
@@ -393,16 +396,27 @@ scheduler(void)
 }
 */
 
+//TODO TEsting REMOVE
+      struct pstat tp;
+      tp.hticks[0] = 3555; //set pids
+      tp.hticks[1] = 3555; //set pids
+      tp.hticks[2] = 3555; //set pids
+      tp.hticks[3] = 3425; //set pids
     //2-Level Lottery Scheduler
     //Loop over process table to identify lottery winner
     int index = 0;
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       pst.pid[index] = p->pid; //set pids
+      //tp.pid[index] = p->pid;
       if(p->state != RUNNABLE) {
          pst.inuse[index] = 0; //set to not in use
          continue;
       }
+         p->pstat_t = &pst; 
+         testing = pst.inuse[index];
+        // p->pstat_t = &tp; //TODO
+         //pptr = p->pstat_t;
          proc = p;
          switchuvm(p);
          p->state = RUNNING;
