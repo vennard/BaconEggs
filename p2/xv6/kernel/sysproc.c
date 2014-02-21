@@ -92,13 +92,12 @@ int sys_settickets(void)
 //how many times its run, pid, and which queue its on(high or low)
 int sys_getpinfo(void)
 {
-   //struct pstat* ptr;
-   char *p = 0;
+   char *p;
    if(argptr(0,&p,sizeof(struct pstat) < 0)) return -1;
    //set data at ptr equal to local pstat  
-   //ptr = 0;
-   int k = pst.pid[0];
-   return k; 
+   struct pstat *ptr = (struct pstat*) p;
+   p =(char*) ptr;
+   return 0; 
 }
 
 // return how many clock tick interrupts have occurred

@@ -40,7 +40,7 @@ main(void)
   uint a = rand();
   printf(0,"random number: %d\n",a);
   int j;
-   int RUNTIME = 500000;
+   int RUNTIME = 80000;
    int results[100];
    for(j=0;j<RUNTIME;j++) {
       int rnd = rand() % 100;
