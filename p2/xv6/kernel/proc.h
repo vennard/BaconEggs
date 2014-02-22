@@ -11,7 +11,7 @@
 #define NSEGS     7
 
 #include "pstat.h"
-extern volatile struct pstat pst;
+extern struct pstat pst;
 extern struct pstat *pptr;
 extern int testing;
 

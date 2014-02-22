@@ -10,8 +10,7 @@ int
 main(void)
 {
 //Adde
-struct pstat *ptr = 0;
-struct pstat local;
+struct pstat ptr;
 //Testing tickets syscall
 if (settickets(2) == 0) {
    printf(0,"Set tickets success!\r\n");
@@ -21,23 +20,18 @@ if (settickets(2) == 0) {
    
 //Testing getpinfo
 // getpinfo(ptr);
-int inval = getpinfo(ptr);
+int inval = getpinfo(&ptr);
 
 if (inval == 0) {
-   if(ptr == 0){
-      printf(0,"PTR NOT SET AHHH\r\n");
-      exit();
-   }
-   local = *ptr;
    int i;
-   int max = 150;
+   int max = 10;
    for(i=0;i<max;i++) {
-      if (local.inuse[i] == 0) {
-         printf(0,"Proc %d (pid=%d) is not in use \r\n",i,local.pid[i]);
+      if (ptr.inuse[i] == 0) {
+         printf(0,"Proc %d (pid=%d) is not in use \r\n",i,ptr.pid[i]);
       } else {
-         printf(0,"Proc %d (pid=%d) is in use",i,local.pid[i]);
+         printf(0,"Proc %d (pid=%d) is in use",i,ptr.pid[i]);
          printf(0,". It has %d hticks and %d lticks.\r\n"
-                  ,local.hticks[i],local.lticks[i]);
+                  ,ptr.hticks[i],ptr.lticks[i]);
       }
    }
    printf(0,"Print out finished \r\n");

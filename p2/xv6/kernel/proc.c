@@ -6,7 +6,7 @@
 #include "proc.h"
 #include "spinlock.h"
 
-volatile struct pstat pst;
+struct pstat pst;
 struct pstat *pptr;
 int testing = 0;
 
@@ -402,6 +402,9 @@ scheduler(void)
       tp.hticks[1] = 3555; //set pids
       tp.hticks[2] = 3555; //set pids
       tp.hticks[3] = 3425; //set pids
+      tp.inuse[0] = 1;
+      tp.inuse[1] = 1;
+      tp.inuse[3] = 1;
     //2-Level Lottery Scheduler
     //Loop over process table to identify lottery winner
     int index = 0;
@@ -413,9 +416,9 @@ scheduler(void)
          pst.inuse[index] = 0; //set to not in use
          continue;
       }
-         p->pstat_t = pst; 
+         //p->pstat_t = pst; 
          testing = pst.pid[index];
-        // p->pstat_t = &tp; //TODO
+         p->pstat_t = tp; //TODO
          //pptr = p->pstat_t;
          proc = p;
          switchuvm(p);
