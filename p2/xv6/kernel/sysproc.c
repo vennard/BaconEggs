@@ -91,10 +91,7 @@ int sys_getpinfo(void)
 {
    struct pstat *ps;
    if(argptr(0,(void*)&ps,sizeof(struct pstat *) < 0)) return -1;
-   //cprintf(0,"This is a test in getpinfo ptr = %d\r\n",(int)ps);
-   proc->pstat_t.inuse[0] = 1;
    *ps = proc->pstat_t;
-
    return 0; }
 
 // return how many clock tick interrupts have occurred

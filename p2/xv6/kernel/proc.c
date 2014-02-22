@@ -7,8 +7,6 @@
 #include "spinlock.h"
 
 struct pstat pst;
-struct pstat *pptr;
-int testing = 0;
 
 struct {
   struct spinlock lock;
@@ -308,17 +306,11 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
-    // TODO Scheduler prep code 
+    // Scheduler prep code 
     // Search through procs and count # in each queue 
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->state != RUNNABLE) continue;
-         /*
-         proc = p;
-         switchuvm(p);
-         p->state = RUNNING;
-         swtch(&cpu->scheduler, proc->context);
-         switchkvm();
       //Run twice for LOW priority queue (second run)
       if (p->level == 2) {
          p->level = 1; //set back to normal low priority
@@ -329,166 +321,101 @@ scheduler(void)
          swtch(&cpu->scheduler, proc->context);
          switchkvm();
       }
-         */
-      if (p->level == 0) {
-      //else if(p->level == 0) {
+      if(p->level == 0) {
         //Count the number of tickets assigned at high priority
         //Assign ticket if no ticket has been assigned
-       if (p->tickets <= 0) {
+         if (p->tickets <= 0) {
            p->tickets = 1;
            hi_tix++;
-        } else {
+         } else {
            hi_tix += p->tickets;
-        }
+         }
       }
-      else if(p->level == 1) {
+      if(p->level == 1) {
         //Might want to check that it has a ticket - just to be sure
-        lo_tix += p->tickets;
+         if (p->tickets <= 0) {
+           p->tickets = 1;
+           lo_tix++;
+         } else {
+            lo_tix += p->tickets;
+         }
       }
+      else {
+         p->level = 0;
+         p->tickets = 1;
+      }
+    proc = 0;
     }
     release(&ptable.lock);
 
     //Generate & mod lottery ticket num
-    //int rnd = get_rand(); //TODO put random number here
-    int rnd = 140;
+    int rnd = get_rand(); //It works!
     int lotto = 0;
+    int qlevel = -1; //0 - high priority queue, 1 - low priority queue
     int tix;
-    if (hi_tix > 0) {
+      //TODO debugging
+      int ss = rnd % 2;
+    if ((hi_tix > 0)&&(ss == 0)) {
+    //if (hi_tix > 0) {
       lotto = rnd % hi_tix; 
       tix = hi_tix;
+      qlevel = 0;
     } else if (lo_tix > 0) {
       lotto = rnd % lo_tix;
       tix = lo_tix;
+      qlevel = 1;
     } else {
-      lotto = -1; //fail safe
-      tix = 0;
+      lotto = 0; //fail safe
+      tix = 1; 
     }
+    if (lotto < 0) lotto = -1*lotto;
 
-    //Generate new tickets for all proc in executing level
-    acquire(&ptable.lock);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-       if(p->state != RUNNABLE) continue;
-       if((hi_tix > 0)&&(p->tickets > 0)) {
-         //assign tickets   
-         int j;
-         for(j=0;j<p->tickets;j++) {
-            p->ticket[j] = hi_tix;
-            hi_tix--;
-         }
-       } else if((lo_tix > 0)&&(p->tickets > 0)) {
-          //assign tickets   
-          int j;
-          for(j=0;j<p->tickets;j++) {
-             p->ticket[j] = lo_tix;
-             lo_tix--;
-          }
-       }     
-    }
-    release(&ptable.lock);
-/*
-         proc = p;
-         switchuvm(p);
-         p->state = RUNNING;
-         swtch(&cpu->scheduler, proc->context);
-         switchkvm();
-      proc = 0;
-  }
-}
-*/
-
-//TODO TEsting REMOVE
-      struct pstat tp;
-      tp.hticks[0] = 3555; //set pids
-      tp.hticks[1] = 3555; //set pids
-      tp.hticks[2] = 3555; //set pids
-      tp.hticks[3] = 3425; //set pids
-      tp.inuse[0] = 1;
-      tp.inuse[1] = 1;
-      tp.inuse[3] = 1;
     //2-Level Lottery Scheduler
     //Loop over process table to identify lottery winner
-    int index = 0;
+    //Lotto = rand % tix
+    int index = -1;
+    int seen_tix = 0;
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      pst.pid[index] = p->pid; //set pids
-      //tp.pid[index] = p->pid;
+      index++;
+      pst.pid[index] = p->pid;
       if(p->state != RUNNABLE) {
-         pst.inuse[index] = 0; //set to not in use
+         pst.inuse[index] = 0; 
          continue;
       }
-         //p->pstat_t = pst; 
-         testing = pst.pid[index];
-         p->pstat_t = tp; //TODO
-         //pptr = p->pstat_t;
-         proc = p;
-         switchuvm(p);
-         p->state = RUNNING;
-         swtch(&cpu->scheduler, proc->context);
-         switchkvm();
+      pst.inuse[index] = 1; 
+      //if proc is in right queue and has tickets
+      if ((p->level == qlevel)&&(p->tickets > 0)) {
+         seen_tix += p->tickets;
+         if (lotto < seen_tix) {
+            //execute
+            if(p->level == 1){
+               p->level = 2;//setup to run twice
+               pst.lticks[index]++; 
+            } else {  
+               p->level = 1; //set to run on low priority queue
+               pst.hticks[index]++;
+            }
+          }
+            pst.lticks[0] = lotto; 
+            pst.lticks[1] = hi_tix;
+            pst.lticks[2] = lo_tix;
+            p->pstat_t = pst;     //my god it works 
+            proc = p;
+            switchuvm(p);
+            p->state = RUNNING;
+            swtch(&cpu->scheduler, proc->context);
+            switchkvm();
+         //}
+      }
       proc = 0;
     }
     release(&ptable.lock);
   }
 }
 
-    /*
-      //running hi priority queue
-      if (hi_tix > 0) {
-         if (p->level == 0) {
-            int i;
-            //maybe add a max check for tickets (255)
-            for (i=0;i<p->tickets;p++) {
-               //Check if process has matching ticket
-               if(p->ticket[i] == lotto) {
-                  p->level = 1; //move to low priority queue
-                  pst.hticks[index]++;
-                  pst.inuse[index] = 1; 
-                  //execute proc
-                  proc = p;
-                  switchuvm(p);
-                  p->state = RUNNING;
-                  swtch(&cpu->scheduler, proc->context);
-                  switchkvm();
-               }
-            }
-         }
-      //Otherwise running low priority queue
-      } else if (lo_tix > 0) {
-         if (p->level == 1) {
-            int i;
-            //maybe add a max check for tickets (255)
-            for (i=0;i<p->tickets;p++) {
-               if(p->ticket[i] == lotto) {
-                  p->level = 2;  //setup proc to run twice 
-                  pst.inuse[index] = 1; 
-                  pst.inuse[index] = 1; 
-                  pst.lticks[index] += 2;
-                  // Switch to chosen process.  It is the process's job
-                  // to release ptable.lock and then reacquire it
-                  // before jumping back to us.
-                  proc = p;
-                  switchuvm(p);
-                  p->state = RUNNING;
-                  swtch(&cpu->scheduler, proc->context);
-                  switchkvm();
-               }
-            }
-         }
-      }
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      index++;  
-      proc = 0; 
-    } 
-    release(&ptable.lock);
-  }
-}
-*/
-
-   
-
-//TODO END OF ADDED CODE
+//END OF ADDED CODE
  
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state.

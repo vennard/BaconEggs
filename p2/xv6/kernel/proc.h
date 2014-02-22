@@ -12,8 +12,6 @@
 
 #include "pstat.h"
 extern struct pstat pst;
-extern struct pstat *pptr;
-extern int testing;
 
 
 // Per-CPU state
@@ -82,8 +80,7 @@ struct proc {
   char name[16];               // Process name (debugging)
   int tickets;                 // Number of tickets for scheduling lottery
   int level;                   // 0 - high, 1 - low, 2 - means run again now
-  int ticket[255];             // Holds tickets for process
-  struct pstat pstat_t;
+  struct pstat pstat_t;        // Helps pass pstat from scheduler to syscall
 };
 
 // Process memory is laid out contiguously, low addresses first:

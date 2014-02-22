@@ -12,11 +12,13 @@ main(void)
 //Adde
 struct pstat ptr;
 //Testing tickets syscall
+/*
 if (settickets(2) == 0) {
    printf(0,"Set tickets success!\r\n");
 } else {
    printf(0,"Set tickets success!\r\n");
 }
+*/
    
 //Testing getpinfo
 // getpinfo(ptr);
@@ -24,11 +26,10 @@ int inval = getpinfo(&ptr);
 
 if (inval == 0) {
    int i;
-   int max = 10;
+   int max = 64;
    for(i=0;i<max;i++) {
-      if (ptr.inuse[i] == 0) {
-         printf(0,"Proc %d (pid=%d) is not in use \r\n",i,ptr.pid[i]);
-      } else {
+      if (i < 3) printf(0,"Special val %d = %d\r\n",i,ptr.lticks[i]);
+      if (ptr.inuse[i] == 1) {
          printf(0,"Proc %d (pid=%d) is in use",i,ptr.pid[i]);
          printf(0,". It has %d hticks and %d lticks.\r\n"
                   ,ptr.hticks[i],ptr.lticks[i]);
