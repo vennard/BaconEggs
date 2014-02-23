@@ -28,11 +28,25 @@ if (inval == 0) {
    int i;
    int max = 64;
    for(i=0;i<max;i++) {
-      if (i < 3) printf(0,"Special val %d = %d\r\n",i,ptr.lticks[i]);
-         printf(0,"Proc %d (pid=%d) is in use",i,ptr.pid[i]);
-         printf(0,". It has %d hticks and %d lticks.\r\n"
-                  ,ptr.hticks[i],ptr.lticks[i]);
+      if ((ptr.inuse[i] == 0)&&(i < 10)) {
+         printf(0,"Proc %d not in use pid=%d, hticks = %d, lticks = %d\r\n"
+         ,i,ptr.pid[i],ptr.hticks[i],ptr.lticks[i]);
+      }
+      if(ptr.inuse[i] == 1) {
+         printf(0,"Proc %d running!!! pid=%d, hticks = %d, lticks = %d\r\n"
+            ,i,ptr.pid[i],ptr.hticks[i],ptr.lticks[i]);
+      } else {
+         //printf(0,"Proc %d not in use pid=%d, hticks = %d, lticks = %d\r\n"
+          //  ,i,ptr.pid[i],ptr.hticks[i],ptr.lticks[i]);
+      }
+      if (i == 60) printf(0,"lotto = %d\r\n",ptr.lticks[i]);
+      if (i == 61) printf(0,"qlevel = %d\r\n",ptr.lticks[i]);
+      if (i == 62) printf(0,"tix = %d\r\n",ptr.lticks[i]);
+      if (i == 63) printf(0,"lo_tix= %d\r\n",ptr.lticks[i]);
+      if (i == 59) printf(0,"hi_tix = %d\r\n",ptr.lticks[i]);
+      if (i == 58) printf(0,"Seen ticket? = %d\r\n",ptr.lticks[i]);
    }
+   printf(0,"\r\n");
    printf(0,"Print out finished \r\n");
 } else {
    printf(0,"Failed to call getpinfo!! \r\n");
