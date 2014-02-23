@@ -79,7 +79,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int tickets;                 // Number of tickets for scheduling lottery
-  int level;                   // 0 - high, 1 - low, 2 - means run again now
+  int level;                   // 1 - high, -1 - low, 2 - means run again now
   struct pstat pstat_t;        // Helps pass pstat from scheduler to syscall
 };
 

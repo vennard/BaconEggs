@@ -29,11 +29,9 @@ if (inval == 0) {
    int max = 64;
    for(i=0;i<max;i++) {
       if (i < 3) printf(0,"Special val %d = %d\r\n",i,ptr.lticks[i]);
-      if (ptr.inuse[i] == 1) {
          printf(0,"Proc %d (pid=%d) is in use",i,ptr.pid[i]);
          printf(0,". It has %d hticks and %d lticks.\r\n"
                   ,ptr.hticks[i],ptr.lticks[i]);
-      }
    }
    printf(0,"Print out finished \r\n");
 } else {

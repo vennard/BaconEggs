@@ -313,7 +313,7 @@ scheduler(void)
       if(p->state != RUNNABLE) continue;
       //Run twice for LOW priority queue (second run)
       if (p->level == 2) {
-         p->level = 1; //set back to normal low priority
+         p->level = -1; //set back to low priority
          //execute process
          proc = p;
          switchuvm(p);
@@ -321,7 +321,8 @@ scheduler(void)
          swtch(&cpu->scheduler, proc->context);
          switchkvm();
       }
-      if(p->level == 0) {
+      //Count tickets in hi priority queue
+      if(p->level == 1) {
         //Count the number of tickets assigned at high priority
         //Assign ticket if no ticket has been assigned
          if (p->tickets <= 0) {
@@ -331,7 +332,8 @@ scheduler(void)
            hi_tix += p->tickets;
          }
       }
-      if(p->level == 1) {
+      //Count tickets in lo priority queue
+      if(p->level == -1) {
         //Might want to check that it has a ticket - just to be sure
          if (p->tickets <= 0) {
            p->tickets = 1;
@@ -341,7 +343,7 @@ scheduler(void)
          }
       }
       else {
-         p->level = 0;
+         p->level = 1;
          p->tickets = 1;
       }
     proc = 0;
@@ -351,19 +353,20 @@ scheduler(void)
     //Generate & mod lottery ticket num
     int rnd = get_rand(); //It works!
     int lotto = 0;
-    int qlevel = -1; //0 - high priority queue, 1 - low priority queue
+    int qlevel = 0; //1 - high priority queue, -1 - low priority queue
     int tix;
       //TODO debugging
-      int ss = rnd % 2;
+    int ss = rnd % 2;
     if ((hi_tix > 0)&&(ss == 0)) {
+    //if ((hi_tix > 0)&&(lo_tix < 30)) {
     //if (hi_tix > 0) {
       lotto = rnd % hi_tix; 
       tix = hi_tix;
-      qlevel = 0;
+      qlevel = 1;
     } else if (lo_tix > 0) {
       lotto = rnd % lo_tix;
       tix = lo_tix;
-      qlevel = 1;
+      qlevel = -1;
     } else {
       lotto = 0; //fail safe
       tix = 1; 
@@ -387,19 +390,19 @@ scheduler(void)
       //if proc is in right queue and has tickets
       if ((p->level == qlevel)&&(p->tickets > 0)) {
          seen_tix += p->tickets;
-         if (lotto < seen_tix) {
+         if (lotto <= seen_tix) {
             //execute
-            if(p->level == 1){
+            if(p->level == -1){
                p->level = 2;//setup to run twice
                pst.lticks[index]++; 
             } else {  
-               p->level = 1; //set to run on low priority queue
+               p->level = -1; //set to run on low priority queue
                pst.hticks[index]++;
             }
           }
-            pst.lticks[0] = lotto; 
-            pst.lticks[1] = hi_tix;
-            pst.lticks[2] = lo_tix;
+          //  pst.lticks[0] = lotto; 
+          //  pst.lticks[1] = hi_tix;
+          //  pst.lticks[2] = lo_tix;
             p->pstat_t = pst;     //my god it works 
             proc = p;
             switchuvm(p);
