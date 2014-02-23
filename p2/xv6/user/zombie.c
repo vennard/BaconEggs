@@ -44,7 +44,8 @@ if (inval == 0) {
       if (i == 62) printf(0,"tix = %d\r\n",ptr.lticks[i]);
       if (i == 63) printf(0,"lo_tix= %d\r\n",ptr.lticks[i]);
       if (i == 59) printf(0,"hi_tix = %d\r\n",ptr.lticks[i]);
-      if (i == 58) printf(0,"Seen ticket? = %d\r\n",ptr.lticks[i]);
+      if (i == 58) printf(0,"Second loop ran %d times\r\n",ptr.lticks[i]);
+      if (i == 57) printf(0,"First loop ran %d times\r\n",ptr.lticks[i]);
    }
    printf(0,"\r\n");
    printf(0,"Print out finished \r\n");

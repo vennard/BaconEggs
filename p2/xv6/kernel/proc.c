@@ -299,30 +299,36 @@ void
 scheduler(void)
 {
   struct proc *p;
-  int hi_tix = 0;
-  int lo_tix = 0;
 
   for(;;){
     // Enable interrupts on this processor.
     sti();
 
+    int hi_tix = 0;
+    int lo_tix = 0;
+    int ind = -1;
+    int run_twice = 0;
+
     // Scheduler prep code 
     // Search through procs and count # in each queue 
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE) {
-         p->tickets = 0;
-         continue;
+      ind++;
+      if (p->state == RUNNABLE) {
+         if(p->tickets == 0){ p->tickets = 1; }
+         if(p->level == 0){ p->level = 1; }
+         if(p->level == 2) run_twice = 1; //Setup low priority proc to run 2x
+         if(p->level == 1) { 
+            hi_tix += p->tickets; //count hi priority tickets
+         } else {
+            lo_tix += p->tickets; //count hi priority tickets
+         }
       }
-      if(p->tickets == 0) p->tickets = 1;
-      if(p->level == 0) p->level = 1;
-      //Count tickets in hi priority queue
-      if(p->level == 1) {
-         hi_tix += p->tickets;
-      }
-      //Count tickets in lo priority queue
       else {
-         lo_tix += p->tickets;
+         p->tickets = 1;
+         p->level = 0;
+         pst.inuse[ind] = 0; 
+         continue;
       }
     }
     release(&ptable.lock);
@@ -342,15 +348,17 @@ scheduler(void)
       tix = lo_tix;
       qlevel = -1;
     } else {
-      lotto = -1; //fail safe
+      lotto = 0; //fail safe
       tix = 1; 
       qlevel = 1;
     }
+    //DEBUG CODE TODO REMOVE
     pst.lticks[60] = lotto; 
     pst.lticks[61] = qlevel; 
     pst.lticks[62] = tix;
     pst.lticks[63] = lo_tix;
     pst.lticks[59] = hi_tix;
+    //DEBUG CODE END
 
     //2-Level Lottery Scheduler
     //Loop over process table to identify lottery winner
@@ -359,46 +367,46 @@ scheduler(void)
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       index++;
-      if(p->state != RUNNABLE) {
-         pst.inuse[index] = 0; 
+      if (p->state == RUNNABLE) {
+         pst.pid[index] = p->pid;
+         pst.inuse[index] = 1; 
+         if (run_twice == 1) {
+            //look for low priority process to be run for second time
+            if (p->level == 2) {
+               p->level = -1;
+               pst.lticks[index]++;
+               p->pstat_t = pst;     //my god it works 
+               proc = p;
+               switchuvm(p);
+               p->state = RUNNING;
+               swtch(&cpu->scheduler, proc->context);
+               switchkvm();
+            }
+         }
+         else if (p->level == qlevel) {
+            int k;
+            for (k=0;k<p->tickets;k++) {
+               if (seen_tix == lotto) { //this process won lottery - execute now
+                  if (p->level == 1) {
+                     p->level = -1; //set to run on low priority queue
+                     pst.hticks[index]++;
+                  } else {
+                     p->level = 2;  //setup to run twice 
+                     pst.lticks[index]++;
+                  }
+                  p->pstat_t = pst;     //my god it works 
+                  proc = p;
+                  switchuvm(p);
+                  p->state = RUNNING;
+                  swtch(&cpu->scheduler, proc->context);
+                  switchkvm();
+               }
+               seen_tix++;
+            }
+         }
+      } else {
          continue;
       }
-      pst.pid[index] = p->pid;
-      pst.inuse[index] = 1; 
-      //if proc is in right queue and has tickets
-      //if (p->level == qlevel) {
-         //Debug code rethink v1
-         int k;
-         for (k=0;k<p->tickets;k++) {
-            if ((seen_tix == lotto)&&(p->level == qlevel)) {
-             pst.lticks[58] = 1; //TODO debug code remove
-               if (p->level == 1) {
-                  p->level = -1; //set to run on low priority queue
-                  pst.hticks[index]++;
-               } else {
-                  p->level = -1; 
-                  pst.lticks[index]++;
-               }
-            /*
-            p->pstat_t = pst;     //my god it works 
-            proc = p;
-            switchuvm(p);
-            p->state = RUNNING;
-            swtch(&cpu->scheduler, proc->context);
-            switchkvm();
-         */
-            }
-            seen_tix++;
-         }
-      //}
-       //}  //End Debug code v1
-            p->pstat_t = pst;     //my god it works 
-            proc = p;
-            switchuvm(p);
-            p->state = RUNNING;
-            swtch(&cpu->scheduler, proc->context);
-            switchkvm();
-         //}
       proc = 0;
     }
     release(&ptable.lock);
