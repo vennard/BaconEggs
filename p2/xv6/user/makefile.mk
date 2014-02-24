@@ -17,7 +17,8 @@ USER_PROGS := \
 	usertests\
 	wc\
 	zombie\
-	time_test
+	time_test\
+	scheduler_graph
 
 USER_PROGS := $(addprefix user/, $(USER_PROGS))
 
