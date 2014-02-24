@@ -1,0 +1,44 @@
+starting build
+
+**********************************************************************
+
+Test build
+build project using make
+
+**********************************************************************
+Trying to clean project using make clean
+make clean
+rm -f mysh.o mysh 
+Trying to build project using make
+make
+gcc    -c -o mysh.o mysh.c
+gcc -o mysh mysh.o -Wall -I.
+
+
+test build PASSED
+ (build project using make)
+
+starting badredir
+
+**********************************************************************
+
+Test badredir
+redirect to invalid path
+
+**********************************************************************
+/tmp/tmpqQ9jAR/p/./mysh /afs/cs.wisc.edu/u/b/d/bdavis/public/cs537/tests/2a/badredir/in
+
+
+test badredir PASSED
+ (redirect to invalid path)
+
+**********************************************************************
+Summary:
+test build PASSED
+ (build project using make)
+
+test badredir PASSED
+ (redirect to invalid path)
+
+Passed 2 of 2 tests.
+Overall 2 of 2

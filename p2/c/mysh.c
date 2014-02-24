@@ -10,21 +10,24 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-#define BUFFERLENGTH  512
+#define BUFFERLENGTH  513
 
+char error_message[30] = "An error has occurred\n";
 
 // RETURNS A SAVED COPY OF STDOUT, AND REPLACED STDOUT WITH FILE
 int closeSTDOUT(char *file){
   int save = dup(STDOUT_FILENO);
   int rc = close(STDOUT_FILENO);
   if (rc < 0){
-    perror("close_closeSTDOUT");
+    write(STDERR_FILENO, error_message, strlen(error_message));
+    //perror("close_closeSTDOUT");
     return -1;
   }
   int fd = open(file, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
   //printf("opened file %s with file number %d, which should be %d", file, fd, STDOUT_FILENO);
   if (fd < 0){
-    perror("open_closeSTDOUT");
+    write(STDERR_FILENO, error_message, strlen(error_message));
+    //perror("open_closeSTDOUT");
     return -1;
   }  
   return save;
@@ -35,17 +38,20 @@ int closeSTDOUT(char *file){
 int openSTDOUT(int save){
   int rc = close(STDOUT_FILENO); //actually is the file in it's place
   if (rc < 0){
-    perror("close_openSTDOUT1");
+    write(STDERR_FILENO, error_message, strlen(error_message));    
+    //perror("close_openSTDOUT1");
     return -1;
   }
   int fd = dup2(save, STDOUT_FILENO);
   if (fd < 0){
-    perror("open_STDOUT");
+    //perror("open_STDOUT");
+    write(STDERR_FILENO, error_message, strlen(error_message));
     return -1;
   }
   rc = close(save);
   if (rc < 0){
-    perror("close_closeSTDOUT2");
+    //perror("close_closeSTDOUT2");
+    write(STDERR_FILENO, error_message, strlen(error_message));
     return -1;
   }
   return fd;
@@ -65,7 +71,6 @@ int main (int argc, char* argv[]){
   char *pypart = ".py";
 
   int count, i, carrotcount, andcount;
-  char error_message[30] = "An error has occurred\n";
   //write(STDERR_FILENO, error_message, strlen(error_message));
 
   int rc, fd;
@@ -119,6 +124,8 @@ int main (int argc, char* argv[]){
       write(STDOUT_FILENO,buff,strlen(buff));
     }
 
+    if ((strlen(buff) <=1) && (buff[0] == '\n')) continue;
+
     // COUNT ">" and "&"
     for (i = 0; i < strlen(buff); i++){
       if (buff[i] == '>'){
@@ -160,7 +167,7 @@ int main (int argc, char* argv[]){
       saved_STDOUT = closeSTDOUT(redirect_file);
       if (saved_STDOUT < 0){
         // CHANGE ERROR
-        perror("saving STDOUT");
+        //perror("saving STDOUT");
         continue;
       }      
     }
@@ -191,12 +198,16 @@ int main (int argc, char* argv[]){
       */
 
     // EXIT - COMPLETE
-    if (strncmp(token[0], "exit", 512) == 0){
+    if (strncmp(token[0], "exit", BUFFERLENGTH) == 0){
+      if (token[1] != NULL){
+        write(STDERR_FILENO, error_message, strlen(error_message));
+        continue;
+      }
       exit(0);
     }
 
     // CD - COMPLETE
-    if (strncmp(token[0], "cd", 512) == 0){
+    if (strncmp(token[0], "cd", BUFFERLENGTH) == 0){
       char *home;
       
       if (token[1] == NULL){
@@ -218,7 +229,11 @@ int main (int argc, char* argv[]){
     }    
 
     // PWD - COMPLETE
-    if (strncmp(token[0], "pwd", 512) == 0){
+    if (strncmp(token[0], "pwd", BUFFERLENGTH) == 0){
+      if (token[1] != NULL){
+        write(STDERR_FILENO, error_message, strlen(error_message));
+        continue;
+      }
       char cwd[512];
       if (getcwd(cwd, 512) == NULL){
         // CHANGE ERROR
@@ -232,14 +247,18 @@ int main (int argc, char* argv[]){
 
     // WAIT - THINK ITS DONE
     int pid;
-    if (strncmp(token[0], "wait", 512) == 0){
+    if (strncmp(token[0], "wait", BUFFERLENGTH) == 0){
+      if (token[1] != NULL){
+        write(STDERR_FILENO, error_message, strlen(error_message));
+        continue;
+      }
       while(numprocess > 0){
         pid = wait(NULL);
         if (pid != -1){
           numprocess--;
          }
       }
-      //if (strncmp(token[1],"NULL", 512) != 0)
+      //if (strncmp(token[1],"NULL", BUFFERLENGTH) != 0)
       //   write(STDERR_FILENO, error_message, strlen(error_message));
       continue;
     }
