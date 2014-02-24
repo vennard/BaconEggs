@@ -314,7 +314,9 @@ scheduler(void)
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       ind++;
-      if (p->state == RUNNABLE) {
+      if ((p->state == RUNNABLE)||(p->state == RUNNING)) { 
+         pst.inuse[ind] = 1;
+      //if (p->state == RUNNABLE) {
          if(p->tickets == 0){ p->tickets = 1; }
          if(p->level == 0){ p->level = 1; }
          if(p->level == 2) run_twice = 1; //Setup low priority proc to run 2x
@@ -325,7 +327,7 @@ scheduler(void)
          }
       }
       else {
-         p->tickets = 1;
+         p->tickets = 0;
          p->level = 0;
          pst.inuse[ind] = 0; 
          continue;

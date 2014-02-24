@@ -4,21 +4,19 @@
 #include "types.h"
 #include "stat.h"
 #include "user.h"
+#include "pstat.h"
 
-#include "../kernel/pstat.h"
 int
 main(void)
 {
 //Adde
 struct pstat ptr;
 //Testing tickets syscall
-/*
-if (settickets(2) == 0) {
+if (settickets(1) == 0) {
    printf(0,"Set tickets success!\r\n");
 } else {
-   printf(0,"Set tickets success!\r\n");
+   printf(0,"Set tickets failed!\r\n");
 }
-*/
    
 //Testing getpinfo
 // getpinfo(ptr);

@@ -80,7 +80,8 @@ sys_sleep(void)
 int sys_settickets(void)
 {
    int n;
-   if(argint(0,&n) < 1) return -1;
+   if(argint(0, &n) < 0) return -1;
+   if(n < 1) return -1;
    proc->tickets = n;
    return 0;
 }
@@ -91,7 +92,8 @@ int sys_getpinfo(void)
 {
    struct pstat *ps;
    if(argptr(0,(void*)&ps,sizeof(struct pstat *) < 0)) return -1;
-   *ps = proc->pstat_t;
+   //*ps = proc->pstat_t;
+   *ps = pst;
    return 0; }
 
 // return how many clock tick interrupts have occurred
