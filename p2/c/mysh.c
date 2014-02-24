@@ -72,6 +72,14 @@ int main (int argc, char* argv[]){
   int saved_STDOUT = -1;
   int numprocess;
 
+//  if (argc == 2){
+//    FILE *file = fopen(argv[1],"r");
+//    if (file == NULL){
+//      perror("cannot open batch file");
+//      exit(1);
+//    }
+//  }
+
   // MAIN LOOP, PROMPTS USER AND PROCESSES INPUT
   while(1){
     // INITIALIZE COUNTS
@@ -79,14 +87,24 @@ int main (int argc, char* argv[]){
     andcount = 0;
     numprocess = 0;
 
-    // PROMPT USER
-    printf("mysh> ");
-    
+    // PROMPT USER IF IN INTERACTIVE MODE
+//    if (argc != 2){
+      printf("mysh> ");
+//    }
+  
     // READ INPUT UNTIL NEWLINE READ
-    if (fgets(buff, BUFFERLENGTH, stdin) == NULL){
-      perror("fgets");
-      continue;
-    } 
+//    if (argc != 2){
+      if (fgets(buff, BUFFERLENGTH, stdin) == NULL){
+        perror("fgets");
+        continue;
+      } 
+//    } else if (argc = 2){
+//      if (fgets(buff, BUFFERLENGTH, file) == NULL){
+//        // ERROR
+//        continue
+//      }
+//      // PRINT LINE
+//    }
 
     // COUNT ">" and "&"
     for (i = 0; i < strlen(buff); i++){
