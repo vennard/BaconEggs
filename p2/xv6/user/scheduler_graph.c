@@ -28,9 +28,6 @@ uint rand(void) {
 
 //Test Program to return info on scheduler
 //used to create graph for p2 turnin
-//GRAPH INFO
-// y -------> procs tickets / total tickets
-// x -------> # procs time slices / total time slices
 int main(void) {
    struct pstat pst;
    int max = 64;
@@ -42,7 +39,7 @@ int main(void) {
       int my_pid = getpid();
       //is parent
       //assign tickets to process
-      int numtickets = 3;
+      int numtickets = 5;
       if (settickets(numtickets) == -1) printf(0,"Error with settickets!\r\n");
 
       // Time step through collecting data points
@@ -60,10 +57,10 @@ int main(void) {
             if (pst.lticks[i] > 0) t_timeslices+=pst.lticks[i];
             if (pst.pid[i] == my_pid) t_myslices = pst.lticks[i];
          }
-         
-         printf(0,"%d: x = %d / (%d + %d - 1)\r\n",j,numtickets,t_procs,numtickets);
-         printf(0,"%d: y = %d / %d \r\n",j,t_myslices,t_timeslices);
-         printf(0,"That was graph #%d\r\n",j);
+         printf(0,"ENTRY %d: \r\n",j);
+         printf(0,"my_tickets / total tickets: x = %d y = %d\r\n",numtickets,t_procs + numtickets -1);
+         printf(0,"my_slices / total slices: x = %d y = %d\r\n",t_myslices,t_timeslices);
+         printf(0," \r\n");
          int x = numtickets / (t_procs + numtickets - 1);
          int y = t_myslices / t_timeslices;
          //save off   
@@ -125,7 +122,7 @@ int main(void) {
       //make child do lots of stuff to give good data for graph
       init(33256246);
       int j;
-      int RUNTIME = 1000000;
+      int RUNTIME = 10000000;
       int results[100];
       printf(0,"Child generating %d random numbers...\r\n",RUNTIME);
       for(j=0;j<RUNTIME;j++) {
@@ -139,7 +136,7 @@ int main(void) {
       if (avg != RUNTIME / 100) {
          printf(0,"Childs random average incorrect!!! it was %d\r\n",avg);
       } else {
-         printf(0,"Childs random average is good!!! it was %d\r\n",avg);
+         //printf(0,"Childs random average is good!!! it was %d\r\n",avg);
       }
    } 
 
