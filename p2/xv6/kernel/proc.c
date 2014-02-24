@@ -6,6 +6,8 @@
 #include "proc.h"
 #include "spinlock.h"
 
+#define RND 0x3e425212 //for random num generation
+
 struct pstat pst;
 
 struct {
@@ -246,8 +248,8 @@ wait(void)
     sleep(proc, &ptable.lock);  //DOC: wait-sleep
   }
 }
-//ADDED BELOW TODO label
-#define RND 0x3e425212
+//Code below for complementary multiply-with-carry 
+//random number generator
 
 static uint x[4096];
 static uint b;
@@ -314,9 +316,12 @@ scheduler(void)
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       ind++;
-      if ((p->state == RUNNABLE)||(p->state == RUNNING)) { 
+      //Apparently even zombies and embryos are in use
+      if ((p->state == EMBRYO)||(p->state == SLEEPING)||(p->state == ZOMBIE)) {
          pst.inuse[ind] = 1;
-      //if (p->state == RUNNABLE) {
+      }
+      else if ((p->state == RUNNABLE)||(p->state == RUNNING)) { 
+         pst.inuse[ind] = 1;
          if(p->tickets == 0){ p->tickets = 1; }
          if(p->level == 0){ p->level = 1; }
          if(p->level == 2) run_twice = 1; //Setup low priority proc to run 2x
@@ -354,13 +359,6 @@ scheduler(void)
       tix = 1; 
       qlevel = 1;
     }
-    //DEBUG CODE TODO REMOVE
-    pst.lticks[60] = lotto; 
-    pst.lticks[61] = qlevel; 
-    pst.lticks[62] = tix;
-    pst.lticks[63] = lo_tix;
-    pst.lticks[59] = hi_tix;
-    //DEBUG CODE END
 
     //2-Level Lottery Scheduler
     //Loop over process table to identify lottery winner
@@ -414,8 +412,6 @@ scheduler(void)
     release(&ptable.lock);
   }
 }
-
-//END OF ADDED CODE
  
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state.
