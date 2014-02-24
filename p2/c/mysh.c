@@ -105,18 +105,16 @@ int main (int argc, char* argv[]){
     // normal mode
     if (argc != 2){
       if (fgets(buff, BUFFERLENGTH, stdin) == NULL){
-        perror("fgets");
-        //write(STDERR_FILENO, error_message, strlen(error_message));
+        //perror("fgets");
+        write(STDERR_FILENO, error_message, strlen(error_message));
         continue;
       } 
       //batch mode
     } else if (argc == 2){
       if (fgets(buff, BUFFERLENGTH, file) == NULL){
-        //write(STDERR_FILENO, error_message, strlen(error_message));
+        //Done with batch file
         exit(0);
-        //continue;
       }
-      
       // PRINT LINE
       write(STDOUT_FILENO,buff,strlen(buff));
     }
@@ -205,13 +203,15 @@ int main (int argc, char* argv[]){
 	home = getenv("HOME");
 	if (chdir(home) != 0){
           // CHANGE ERROR
-          perror("error in CD, no arguments");
+          write(STDERR_FILENO, error_message, strlen(error_message));
+          //perror("error in CD, no arguments");
         }
       }
       else{
 	if (chdir(token[1]) != 0){
 	  // CHANGE ERROR
-          perror("error in CD, with arugments");
+          write(STDERR_FILENO, error_message, strlen(error_message));
+          //perror("error in CD, with arugments");
         }
       }
       continue;
@@ -222,7 +222,8 @@ int main (int argc, char* argv[]){
       char cwd[512];
       if (getcwd(cwd, 512) == NULL){
         // CHANGE ERROR
-        perror("error in PWD");
+        write(STDERR_FILENO, error_message, strlen(error_message));
+        //perror("error in PWD");
       }
       write(STDOUT_FILENO, cwd, strlen(cwd));
       write(STDOUT_FILENO, "\n", 1);
@@ -230,13 +231,16 @@ int main (int argc, char* argv[]){
     }
 
     // WAIT - THINK ITS DONE
+    int pid;
     if (strncmp(token[0], "wait", 512) == 0){
       while(numprocess > 0){
-        int pid = wait(NULL);
+        pid = wait(NULL);
         if (pid != -1){
           numprocess--;
-	}
+         }
       }
+      //if (strncmp(token[1],"NULL", 512) != 0)
+      //   write(STDERR_FILENO, error_message, strlen(error_message));
       continue;
     }
 
@@ -264,7 +268,8 @@ int main (int argc, char* argv[]){
     if (saved_STDOUT != -1){
       fd = openSTDOUT(saved_STDOUT); // RESTORE STDOUT
       if (fd < 0){
-        perror("opening STDOUT");
+        //perror("opening STDOUT");
+        write(STDERR_FILENO, error_message, strlen(error_message));
         exit(1); // TODO: HANDLE THIS MORE GRACEFULLY
       }
       saved_STDOUT = -1;
