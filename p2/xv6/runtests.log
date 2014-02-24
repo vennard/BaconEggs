@@ -58,6 +58,7 @@ Makefile:149: user/usertests.d: No such file or directory
 Makefile:149: user/wc.d: No such file or directory
 Makefile:149: user/zombie.d: No such file or directory
 Makefile:149: user/time_test.d: No such file or directory
+Makefile:149: user/scheduler_graph.d: No such file or directory
 Makefile:149: user/ulib.d: No such file or directory
 Makefile:149: user/usys.d: No such file or directory
 Makefile:149: user/printf.d: No such file or directory
@@ -73,6 +74,8 @@ gcc  -I include -nostdinc -ggdb  -fno-pic -fno-builtin -fno-strict-aliasing -fno
 		-M -MG user/usys.S -MF user/usys.d -MT user/usys.d -MT user/usys.o
 gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-aliasing -fno-stack-protector -m32 \
 		-M -MG user/ulib.c -MF user/ulib.d -MT user/ulib.d -MT user/ulib.o
+gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-aliasing -fno-stack-protector -m32 \
+		-M -MG user/scheduler_graph.c -MF user/scheduler_graph.d -MT user/scheduler_graph.d -MT user/scheduler_graph.o
 gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-aliasing -fno-stack-protector -m32 \
 		-M -MG user/time_test.c -MF user/time_test.d -MT user/time_test.d -MT user/time_test.o
 gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-aliasing -fno-stack-protector -m32 \
@@ -174,7 +177,7 @@ gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-
 		-M -MG kernel/console.c -MF kernel/console.d -MT kernel/console.d -MT kernel/console.o
 gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-aliasing -fno-stack-protector -m32 \
 		-M -MG kernel/bio.c -MF kernel/bio.d -MT kernel/bio.d -MT kernel/bio.o
-rm -rf kernel/bio.o kernel/console.o kernel/exec.o kernel/file.o kernel/fs.o kernel/ide.o kernel/ioapic.o kernel/kalloc.o kernel/kbd.o kernel/lapic.o kernel/main.o kernel/mp.o kernel/picirq.o kernel/pipe.o kernel/proc.o kernel/spinlock.o kernel/string.o kernel/swtch.o kernel/syscall.o kernel/sysfile.o kernel/sysproc.o kernel/timer.o kernel/trapasm.o kernel/trap.o kernel/uart.o kernel/vectors.o kernel/vm.o kernel/bootmain.o kernel/bootasm.o kernel/multiboot.o kernel/data.o kernel/bootother.o kernel/initcode.o kernel/bio.d kernel/console.d kernel/exec.d kernel/file.d kernel/fs.d kernel/ide.d kernel/ioapic.d kernel/kalloc.d kernel/kbd.d kernel/lapic.d kernel/main.d kernel/mp.d kernel/picirq.d kernel/pipe.d kernel/proc.d kernel/spinlock.d kernel/string.d kernel/swtch.d kernel/syscall.d kernel/sysfile.d kernel/sysproc.d kernel/timer.d kernel/trapasm.d kernel/trap.d kernel/uart.d kernel/vectors.d kernel/vm.d kernel/bootmain.d kernel/bootasm.d kernel/multiboot.d kernel/data.d kernel/bootother.d kernel/initcode.d kernel/vectors.S kernel/bootblock kernel/bootblock.out kernel/bootother.out kernel/initcode.out kernel/kernel bootother initcode xv6.img user/bin user/cat user/echo user/forktest user/grep user/init user/kill user/ln user/ls user/mkdir user/rm user/sh user/stressfs user/tester user/usertests user/wc user/zombie user/time_test user/cat.o user/echo.o user/forktest.o user/grep.o user/init.o user/kill.o user/ln.o user/ls.o user/mkdir.o user/rm.o user/sh.o user/stressfs.o user/tester.o user/usertests.o user/wc.o user/zombie.o user/time_test.o user/ulib.o user/usys.o user/printf.o user/umalloc.o user/cat.d user/echo.d user/forktest.d user/grep.d user/init.d user/kill.d user/ln.d user/ls.d user/mkdir.d user/rm.d user/sh.d user/stressfs.d user/tester.d user/usertests.d user/wc.d user/zombie.d user/time_test.d user/ulib.d user/usys.d user/printf.d user/umalloc.d tools/mkfs tools/mkfs.o tools/mkfs.d fs fs.img .gdbinit .bochsrc dist
+rm -rf kernel/bio.o kernel/console.o kernel/exec.o kernel/file.o kernel/fs.o kernel/ide.o kernel/ioapic.o kernel/kalloc.o kernel/kbd.o kernel/lapic.o kernel/main.o kernel/mp.o kernel/picirq.o kernel/pipe.o kernel/proc.o kernel/spinlock.o kernel/string.o kernel/swtch.o kernel/syscall.o kernel/sysfile.o kernel/sysproc.o kernel/timer.o kernel/trapasm.o kernel/trap.o kernel/uart.o kernel/vectors.o kernel/vm.o kernel/bootmain.o kernel/bootasm.o kernel/multiboot.o kernel/data.o kernel/bootother.o kernel/initcode.o kernel/bio.d kernel/console.d kernel/exec.d kernel/file.d kernel/fs.d kernel/ide.d kernel/ioapic.d kernel/kalloc.d kernel/kbd.d kernel/lapic.d kernel/main.d kernel/mp.d kernel/picirq.d kernel/pipe.d kernel/proc.d kernel/spinlock.d kernel/string.d kernel/swtch.d kernel/syscall.d kernel/sysfile.d kernel/sysproc.d kernel/timer.d kernel/trapasm.d kernel/trap.d kernel/uart.d kernel/vectors.d kernel/vm.d kernel/bootmain.d kernel/bootasm.d kernel/multiboot.d kernel/data.d kernel/bootother.d kernel/initcode.d kernel/vectors.S kernel/bootblock kernel/bootblock.out kernel/bootother.out kernel/initcode.out kernel/kernel bootother initcode xv6.img user/bin user/cat user/echo user/forktest user/grep user/init user/kill user/ln user/ls user/mkdir user/rm user/sh user/stressfs user/tester user/usertests user/wc user/zombie user/time_test user/scheduler_graph user/cat.o user/echo.o user/forktest.o user/grep.o user/init.o user/kill.o user/ln.o user/ls.o user/mkdir.o user/rm.o user/sh.o user/stressfs.o user/tester.o user/usertests.o user/wc.o user/zombie.o user/time_test.o user/scheduler_graph.o user/ulib.o user/usys.o user/printf.o user/umalloc.o user/cat.d user/echo.d user/forktest.d user/grep.d user/init.d user/kill.d user/ln.d user/ls.d user/mkdir.d user/rm.d user/sh.d user/stressfs.d user/tester.d user/usertests.d user/wc.d user/zombie.d user/time_test.d user/scheduler_graph.d user/ulib.d user/usys.d user/printf.d user/umalloc.d tools/mkfs tools/mkfs.o tools/mkfs.d fs fs.img .gdbinit .bochsrc dist
 Trying to build project using make
 make
 Makefile:149: kernel/bio.d: No such file or directory
@@ -227,6 +230,7 @@ Makefile:149: user/usertests.d: No such file or directory
 Makefile:149: user/wc.d: No such file or directory
 Makefile:149: user/zombie.d: No such file or directory
 Makefile:149: user/time_test.d: No such file or directory
+Makefile:149: user/scheduler_graph.d: No such file or directory
 Makefile:149: user/ulib.d: No such file or directory
 Makefile:149: user/usys.d: No such file or directory
 Makefile:149: user/printf.d: No such file or directory
@@ -242,6 +246,8 @@ gcc  -I include -nostdinc -ggdb  -fno-pic -fno-builtin -fno-strict-aliasing -fno
 		-M -MG user/usys.S -MF user/usys.d -MT user/usys.d -MT user/usys.o
 gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-aliasing -fno-stack-protector -m32 \
 		-M -MG user/ulib.c -MF user/ulib.d -MT user/ulib.d -MT user/ulib.o
+gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-aliasing -fno-stack-protector -m32 \
+		-M -MG user/scheduler_graph.c -MF user/scheduler_graph.d -MT user/scheduler_graph.d -MT user/scheduler_graph.o
 gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-aliasing -fno-stack-protector -m32 \
 		-M -MG user/time_test.c -MF user/time_test.d -MT user/time_test.d -MT user/time_test.o
 gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-aliasing -fno-stack-protector -m32 \
@@ -398,15 +404,15 @@ ld  -m    elf_i386 -nostdlib --omagic \
 dd if=/dev/zero of=xv6.img count=10000
 10000+0 records in
 10000+0 records out
-5120000 bytes (5.1 MB) copied, 0.0226397 s, 226 MB/s
+5120000 bytes (5.1 MB) copied, 0.0232008 s, 221 MB/s
 dd if=kernel/bootblock of=xv6.img conv=notrunc
 1+0 records in
 1+0 records out
-512 bytes (512 B) copied, 0.000134152 s, 3.8 MB/s
+512 bytes (512 B) copied, 0.000119639 s, 4.3 MB/s
 dd if=kernel/kernel of=xv6.img seek=1 conv=notrunc
 259+1 records in
 259+1 records out
-133113 bytes (133 kB) copied, 0.000505053 s, 264 MB/s
+133113 bytes (133 kB) copied, 0.000527799 s, 252 MB/s
 gcc -c  -iquote include -Wall -Werror -ggdb  -o tools/mkfs.o tools/mkfs.c
 gcc  tools/mkfs.o -o tools/mkfs
 mkdir -p fs
@@ -467,29 +473,33 @@ cp user/bin/zombie fs/zombie
 gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-aliasing -fno-stack-protector -m32 -c -o user/time_test.o user/time_test.c
 ld  -m    elf_i386 -nostdlib --omagic --entry=main --section-start=.text=0x0 --output=user/bin/time_test user/time_test.o user/ulib.o user/usys.o user/printf.o user/umalloc.o
 cp user/bin/time_test fs/time_test
+gcc  -I include -nostdinc -Wall -Werror -ggdb -fno-pic -fno-builtin -fno-strict-aliasing -fno-stack-protector -m32 -c -o user/scheduler_graph.o user/scheduler_graph.c
+ld  -m    elf_i386 -nostdlib --omagic --entry=main --section-start=.text=0x0 --output=user/bin/scheduler_graph user/scheduler_graph.o user/ulib.o user/usys.o user/printf.o user/umalloc.o
+cp user/bin/scheduler_graph fs/scheduler_graph
 ./tools/mkfs fs.img fs
 used 29 (bit 1 ninode 26) free 29 total 1024
-wc
-stressfs
-time_test
-cat
-rm
-README
-ln
-ls
-zombie
-grep
-kill
-usertests
-mkdir
-sh
-tester
 init
-echo
+ls
+kill
+cat
+ln
+mkdir
+scheduler_graph
+README
+stressfs
+tester
+rm
+grep
 forktest
-balloc: first 447 blocks have been allocated
+echo
+wc
+zombie
+time_test
+sh
+usertests
+balloc: first 474 blocks have been allocated
 balloc: write bitmap block at sector 28
-rm user/bin/stressfs user/bin/grep user/bin/tester user/bin/kill user/bin/mkdir user/bin/cat user/bin/init user/bin/rm user/bin/echo user/bin/ls user/bin/ln user/bin/usertests user/bin/sh user/bin/wc user/bin/zombie user/bin/time_test
+rm user/bin/stressfs user/bin/grep user/bin/tester user/bin/kill user/bin/mkdir user/bin/cat user/bin/init user/bin/rm user/bin/echo user/bin/scheduler_graph user/bin/ls user/bin/ln user/bin/usertests user/bin/sh user/bin/wc user/bin/zombie user/bin/time_test
 
 
 test build PASSED
@@ -513,25 +523,26 @@ ld  -m    elf_i386 -nostdlib --omagic --entry=main --section-start=.text=0x0 --o
 cp user/bin/tester fs/tester
 ./tools/mkfs fs.img fs
 used 29 (bit 1 ninode 26) free 29 total 1024
-wc
-stressfs
-time_test
-cat
-rm
-README
-ln
-ls
-zombie
-grep
-kill
-usertests
-mkdir
-sh
-tester
 init
-echo
+ls
+kill
+cat
+ln
+mkdir
+scheduler_graph
+README
+stressfs
+tester
+rm
+grep
 forktest
-balloc: first 448 blocks have been allocated
+echo
+wc
+zombie
+time_test
+sh
+usertests
+balloc: first 475 blocks have been allocated
 balloc: write bitmap block at sector 28
 rm user/bin/tester
 make qemu-nox 
@@ -545,7 +556,7 @@ cpu0: starting
 init: starting sh
 $ tester
 tester
-TEST PASSED
+TEST PASSED$ 
 
 test settickets PASSED
  (compile and run a user program with a settickets call)
@@ -568,25 +579,26 @@ ld  -m    elf_i386 -nostdlib --omagic --entry=main --section-start=.text=0x0 --o
 cp user/bin/tester fs/tester
 ./tools/mkfs fs.img fs
 used 29 (bit 1 ninode 26) free 29 total 1024
-wc
-stressfs
-time_test
-cat
-rm
-README
-ln
-ls
-zombie
-grep
-kill
-usertests
-mkdir
-sh
-tester
 init
-echo
+ls
+kill
+cat
+ln
+mkdir
+scheduler_graph
+README
+stressfs
+tester
+rm
+grep
 forktest
-balloc: first 448 blocks have been allocated
+echo
+wc
+zombie
+time_test
+sh
+usertests
+balloc: first 475 blocks have been allocated
 balloc: write bitmap block at sector 28
 rm user/bin/tester
 make qemu-nox 
@@ -601,11 +613,11 @@ init: starting sh
 $ tester
 tester
 pid: 1 hticks: 1
- lticks: 15
+ lticks: 14
 pid: 2 hticks: 1
- lticks: 21
+ lticks: 15
 pid: 3 hticks: 1
- lticks: 6
+ lticks: 12
 TEST PASSED
 
 test getpinfo PASSED
@@ -629,25 +641,26 @@ ld  -m    elf_i386 -nostdlib --omagic --entry=main --section-start=.text=0x0 --o
 cp user/bin/tester fs/tester
 ./tools/mkfs fs.img fs
 used 29 (bit 1 ninode 26) free 29 total 1024
-wc
-stressfs
-time_test
-cat
-rm
-README
-ln
-ls
-zombie
-grep
-kill
-usertests
-mkdir
-sh
-tester
 init
-echo
+ls
+kill
+cat
+ln
+mkdir
+scheduler_graph
+README
+stressfs
+tester
+rm
+grep
 forktest
-balloc: first 449 blocks have been allocated
+echo
+wc
+zombie
+time_test
+sh
+usertests
+balloc: first 476 blocks have been allocated
 balloc: write bitmap block at sector 28
 rm user/bin/tester
 make qemu-nox 
@@ -661,8 +674,8 @@ cpu0: starting
 init: starting sh
 $ tester
 tester
-pid: 1 hticks: 1 lticks:13
-pid: 2 hticks: 1 lticks:22
+pid: 1 hticks: 1 lticks:15
+pid: 2 hticks: 1 lticks:17
 pid: 3 hticks: 1 lticks:17
 TEST PASSED
 
@@ -687,25 +700,26 @@ ld  -m    elf_i386 -nostdlib --omagic --entry=main --section-start=.text=0x0 --o
 cp user/bin/tester fs/tester
 ./tools/mkfs fs.img fs
 used 29 (bit 1 ninode 26) free 29 total 1024
-wc
-stressfs
-time_test
-cat
-rm
-README
-ln
-ls
-zombie
-grep
-kill
-usertests
-mkdir
-sh
-tester
 init
-echo
+ls
+kill
+cat
+ln
+mkdir
+scheduler_graph
+README
+stressfs
+tester
+rm
+grep
 forktest
-balloc: first 450 blocks have been allocated
+echo
+wc
+zombie
+time_test
+sh
+usertests
+balloc: first 477 blocks have been allocated
 balloc: write bitmap block at sector 28
 rm user/bin/tester
 make qemu-nox CPUS=1
@@ -717,8 +731,8 @@ cpu0: starting
 init: starting sh
 $ tester
 tester
-lticks child 1: 342
-lticks child 2: 660
+lticks child 1: 336
+lticks child 2: 668
 TEST PASSED
 
 
@@ -743,25 +757,26 @@ ld  -m    elf_i386 -nostdlib --omagic --entry=main --section-start=.text=0x0 --o
 cp user/bin/tester fs/tester
 ./tools/mkfs fs.img fs
 used 29 (bit 1 ninode 26) free 29 total 1024
-wc
-stressfs
-time_test
-cat
-rm
-README
-ln
-ls
-zombie
-grep
-kill
-usertests
-mkdir
-sh
-tester
 init
-echo
+ls
+kill
+cat
+ln
+mkdir
+scheduler_graph
+README
+stressfs
+tester
+rm
+grep
 forktest
-balloc: first 451 blocks have been allocated
+echo
+wc
+zombie
+time_test
+sh
+usertests
+balloc: first 478 blocks have been allocated
 balloc: write bitmap block at sector 28
 rm user/bin/tester
 make qemu-nox CPUS=1
@@ -773,9 +788,9 @@ cpu0: starting
 init: starting sh
 $ tester
 tester
-lticks child 1: 264
-lticks child 2: 504
-lticks child 3: 734
+lticks child 1: 284
+lticks child 2: 466
+lticks child 3: 754
 TEST PASSED
 
 
@@ -800,25 +815,26 @@ ld  -m    elf_i386 -nostdlib --omagic --entry=main --section-start=.text=0x0 --o
 cp user/bin/tester fs/tester
 ./tools/mkfs fs.img fs
 used 29 (bit 1 ninode 26) free 29 total 1024
-wc
-stressfs
-time_test
-cat
-rm
-README
-ln
-ls
-zombie
-grep
-kill
-usertests
-mkdir
-sh
-tester
 init
-echo
+ls
+kill
+cat
+ln
+mkdir
+scheduler_graph
+README
+stressfs
+tester
+rm
+grep
 forktest
-balloc: first 450 blocks have been allocated
+echo
+wc
+zombie
+time_test
+sh
+usertests
+balloc: first 477 blocks have been allocated
 balloc: write bitmap block at sector 28
 rm user/bin/tester
 make qemu-nox CPUS=1
@@ -830,8 +846,8 @@ cpu0: starting
 init: starting sh
 $ tester
 tester
-lticks child 1: 18
-lticks child 2: 1246
+lticks child 1: 6
+lticks child 2: 1088
 TEST PASSED
 
 

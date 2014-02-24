@@ -71,14 +71,23 @@ int main (int argc, char* argv[]){
   int rc, fd;
   int saved_STDOUT = -1;
   int numprocess;
+  FILE *file;
+  
 
-//  if (argc == 2){
-//    FILE *file = fopen(argv[1],"r");
-//    if (file == NULL){
-//      perror("cannot open batch file");
-//      exit(1);
-//    }
-//  }
+// Batch mode arg
+  if (argc == 2){
+    file = fopen(argv[1],"r");
+    if (file == NULL){
+      write(STDERR_FILENO, error_message, strlen(error_message));
+      //perror("cannot open batch file");
+      exit(1);
+    }
+  }
+  //If invalid args for mysh exit
+  if (argc > 2) {
+     write(STDERR_FILENO, error_message, strlen(error_message));
+     exit(1);
+  }
 
   // MAIN LOOP, PROMPTS USER AND PROCESSES INPUT
   while(1){
@@ -88,28 +97,34 @@ int main (int argc, char* argv[]){
     numprocess = 0;
 
     // PROMPT USER IF IN INTERACTIVE MODE
-//    if (argc != 2){
+    if (argc != 2){
       printf("mysh> ");
-//    }
+    }
   
     // READ INPUT UNTIL NEWLINE READ
-//    if (argc != 2){
+    // normal mode
+    if (argc != 2){
       if (fgets(buff, BUFFERLENGTH, stdin) == NULL){
         perror("fgets");
+        //write(STDERR_FILENO, error_message, strlen(error_message));
         continue;
       } 
-//    } else if (argc = 2){
-//      if (fgets(buff, BUFFERLENGTH, file) == NULL){
-//        // ERROR
-//        continue
-//      }
-//      // PRINT LINE
-//    }
+      //batch mode
+    } else if (argc == 2){
+      if (fgets(buff, BUFFERLENGTH, file) == NULL){
+        //write(STDERR_FILENO, error_message, strlen(error_message));
+        exit(0);
+        //continue;
+      }
+      
+      // PRINT LINE
+      write(STDOUT_FILENO,buff,strlen(buff));
+    }
 
     // COUNT ">" and "&"
     for (i = 0; i < strlen(buff); i++){
       if (buff[i] == '>'){
- 	carrotcount++;
+ 	      carrotcount++;
       }
       else if (buff[i] == '&'){
         andcount++;
@@ -126,14 +141,19 @@ int main (int argc, char* argv[]){
     // OUTPUT DIRECTION DETECTED!
     if (carrotcount == 1){
       redirect_command = strtok(buff, del1);
-      printf("Command buffer contains:%s\n", redirect_command);
+      //printf("Command buffer contains:%s\n", redirect_command);
+      //char temp[255];
+      //sprintf(temp,"Command buffer contains:%s\n",redirect_command);
+      //write(STDOUT_FILENO,temp,strlen(temp));
+      
       redirect_file = strtok(NULL, del1);
       
       // PARSE REDIRECTED FILE FROM PORTION AFTER THE ">"
       redirect_file = strtok(redirect_file, del2);
       if (strtok(NULL, del2) != NULL){
         // CHANGE ERROR
-	perror("too many output files for redirection");
+//	perror("too many output files for redirection");
+   write(STDERR_FILENO, error_message, strlen(error_message));
 	continue;
       }
       //printf("Output file buffer contains:%s\n", redirect_file);
@@ -161,6 +181,7 @@ int main (int argc, char* argv[]){
 //    while 
 
     // DEBUG: PRINT TOKENS
+    /*
     write(STDOUT_FILENO, "TOKENS:", 7);
     for (i = 0; i < count; i++){
       //printf("token[%d]: %s\t",i,token[i]);
@@ -169,6 +190,7 @@ int main (int argc, char* argv[]){
       write(STDOUT_FILENO, "END", 3);
     }
     write(STDOUT_FILENO, "\n", 1);
+      */
 
     // EXIT - COMPLETE
     if (strncmp(token[0], "exit", 512) == 0){
@@ -247,6 +269,7 @@ int main (int argc, char* argv[]){
       }
       saved_STDOUT = -1;
     }
+
   } // End of main loop
 
   return 0; // WE'LL NEVER GET HERE!
