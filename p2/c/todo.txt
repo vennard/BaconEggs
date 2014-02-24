@@ -1,0 +1,10 @@
+test test test and fix bugs!
+batch mode
+
+Hi John,
+I'm going to convert my input system to the batch mode and then each feature has been "implemented," but not well tested.
+I'm going to take care of that during my next class hopefully. I can't get the tests to run. I copied them into this directory
+too, so if you can try running them, that'd be sweet.
+
+Thanks!
+Zach
