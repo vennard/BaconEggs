@@ -95,6 +95,7 @@ int main (int argc, char* argv[]){
   }
 
   // MAIN LOOP, PROMPTS USER AND PROCESSES INPUT
+  int x = 0;
   while(1){
     // INITIALIZE COUNTS
     carrotcount = 0;
@@ -103,14 +104,26 @@ int main (int argc, char* argv[]){
 
     // PROMPT USER IF IN INTERACTIVE MODE
     if (argc != 2){
+      if (x == 0)
       printf("mysh> ");
     }
   
     // READ INPUT UNTIL NEWLINE READ
+    // Input piped directly to file
+    if (argc == 1){
+      if (x == 0) {
+      char temp[] = "mysh> ";
+      write(STDOUT_FILENO,temp,strlen(temp));
+      x = 1;
+      }
+      if (fgets(buff, BUFFERLENGTH, stdin) == NULL) exit(0);
+      //printf("woow = %s\r\n",buff);
+      //exit(0);
+      //write(STDOUT_FILENO,buff,strlen(buff));
+    }
     // normal mode
-    if (argc != 2){
+    else if (argc != 2){
       if (fgets(buff, BUFFERLENGTH, stdin) == NULL){
-        //perror("fgets");
         write(STDERR_FILENO, error_message, strlen(error_message));
         continue;
       } 
@@ -213,14 +226,12 @@ int main (int argc, char* argv[]){
       if (token[1] == NULL){
 	home = getenv("HOME");
 	if (chdir(home) != 0){
-          // CHANGE ERROR
           write(STDERR_FILENO, error_message, strlen(error_message));
           //perror("error in CD, no arguments");
         }
       }
       else{
 	if (chdir(token[1]) != 0){
-	  // CHANGE ERROR
           write(STDERR_FILENO, error_message, strlen(error_message));
           //perror("error in CD, with arugments");
         }
@@ -265,7 +276,7 @@ int main (int argc, char* argv[]){
 
     // PYTHON INTERPRETER - IN PROGRESS
     if (strstr(token[0], pypart) != NULL){
-     printf("Python file (%s) found. Count = %d", token[0], count);
+     //printf("Python file (%s) found. Count = %d", token[0], count);
      token[count+1] = NULL;
      for (i = count; i > 0; i--){ // SHIFT EVERYTHING TO THE RIGHT
        token[i] = token[i-1];
