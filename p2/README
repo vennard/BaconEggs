@@ -1,2 +1,4 @@
 John Vennard & Zach Waltz
 CS537 P2 - Shell and Scheduler
+
+xv6 schduler - coding was straight forward for the body of the scheduler with a simple prep loop through the procs to count all the relavent ticket data and then another pass through to find the lottery winner after the queue level and lottery ticket number are decided. Came across trouble with the getpinfo sys call, eventually mastered the pointer skills necessary to complete that after a helpful response from the TA. Also came across trouble declaring variables inside of the scheduler -- needed to declare them after the for(;;) statement otherwise they were persistent instead of refreshing which was utterly confusing to debug. 
