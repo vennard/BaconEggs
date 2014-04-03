@@ -7,6 +7,7 @@
 extern int *startaddress; //holds address returned by mmap for mem_init
 extern int totalsize; //holds total size of memory allocated in mem_init
 extern struct header head; //head of linked list of memory
+extern int numblocks; //holds number of memory blocks currently allocated
 
 struct header{
    char key; //unique key for validating headers
