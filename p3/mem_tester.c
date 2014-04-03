@@ -14,5 +14,7 @@ int main() {
    if (result == 5) printf("Successfully called Mem_Free()!\r\n");
    printf("Calling Mem_Dump()... ");
    Mem_Dump();
+   printf("finishing up testing program.........\r\n");
+   printf("---------------------------------------------------------\r\n");
    return 0;
 }

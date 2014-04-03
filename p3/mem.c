@@ -12,7 +12,7 @@
 int *startaddress;
 int totalsize;
 struct header head;
-void *p_head;
+int *p_head;
 int numblocks;
 
 /*
@@ -23,7 +23,6 @@ int numblocks;
 int Mem_Init(int sizeOfRegion) {
    //TODO if sizeOfRegion <= 0 then return -1 and set m_error = E_BAD_ARGS
    numblocks = 0;
-   p_head = &head;
    int diff;
    int pagesize = getpagesize(); //page size in bytes  
    int modval = sizeOfRegion % pagesize;
@@ -70,6 +69,7 @@ void *Mem_Alloc(int size) {
       head.key = KEY;
       head.size = fsize + sizeof(struct header);
       head.next = NULL;
+      p_head = startaddress; //save address of head of linked list
       //copy struct over to allocated memory
       memcpy(startaddress,&head,sizeof(struct header));
       numblocks++;
@@ -114,25 +114,41 @@ void Mem_Dump() {
    if (totalsize <= 0) printf("Memory has not been initialized! Failed!\r\n");
    if (numblocks <= 0) printf("No memory has been mapped, full memory of size %i available.\r\n",totalsize);
    if (numblocks > 0) { //Navigate through linked list of mem and print each section (including free sections)
-      if ((&p_head - (long) startaddress) > 0) {
+      if ((p_head - startaddress) > 0) {
          printf("Found gap inbetween start of allocated memory and first block of mem!\r\n");
-         printFreeBlock((long)(&head - *startaddress),startaddress);
+         printFreeBlock((long)(p_head - *startaddress),startaddress);
       }
       temp = head;
+      struct header prev;
       for (i = 0;i < numblocks;i++) {
+         prev = temp;
          printMemBlock(temp);
-         if (temp.next != NULL) {
+         if (i == 0) {
             //check for gap
-            long endaddr = ((long)&temp + sizeof(struct header) + (temp.size*8));
-            int gap = (long)&temp.next - endaddr;
-            if (gap > 0) {
-               printFreeBlock(gap, (void *) endaddr);
-            }
+            long endaddr = ((long)p_head + sizeof(struct header) + (temp.size*8));
+            if (temp.next != NULL) {
+               int gap = (long)&temp.next - endaddr;
+               printf("found gap of %i after mem block %i!\r\n",gap,i);
+               if (gap > 0) {
+                  printFreeBlock(gap, (void *) endaddr);
+               }
             temp = *temp.next;
-         } else {
-            printf("encountered null pointer in linked list!\r\n");
+            }
          }
       }
+      //print remaining free area (unit startaddress + totalsize) TODO might have to adjust for bytes
+      int *endaddr = startaddress + totalsize;
+      int *tptr;
+      if (numblocks > 1) {      
+         tptr = (int *)prev.next + sizeof(struct header) + (temp.size*8);
+      } else {
+         tptr = p_head + sizeof(struct header) + head.size;
+      }
+      int sizeleft = (endaddr - tptr);
+      if (sizeleft > 0) {
+         printFreeBlock(sizeleft,tptr);
+      } 
    }
 }
+
 
