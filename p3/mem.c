@@ -14,6 +14,8 @@ int totalsize;
 struct header head;
 int *p_head;
 int numblocks;
+int block = 0;
+int m_error;
 
 /*
  * Called once by a process. Size requested must be rounded to page size. 
@@ -21,7 +23,17 @@ int numblocks;
  * sizeOfRegion = bytes to request from mmap
  */
 int Mem_Init(int sizeOfRegion) {
-   //TODO if sizeOfRegion <= 0 then return -1 and set m_error = E_BAD_ARGS
+   //Can only be called once
+   if (block == 1) { 
+      m_error = E_BAD_ARGS;
+      return -1;
+   }
+   block = 1;
+   //must call valid region size
+   if (sizeOfRegion <= 0) {
+      m_error = E_BAD_ARGS;
+      return -1;
+   }
    numblocks = 0;
    int diff;
    int pagesize = getpagesize(); //page size in bytes  
@@ -38,19 +50,19 @@ int Mem_Init(int sizeOfRegion) {
    startaddress = mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_PRIVATE, fd, 0);  
    totalsize = size;
    if (startaddress == MAP_FAILED) {
-      //TODO return -1 and set m_error = E_BAD_ARGS
       printf("mmap failed!\r\n");
       exit(1);
    } else {
       printf("mmap call in Mem_Init was a success. startaddress is %p.\r\n",startaddress);
    }
    close(fd);
-   return 7; //TODO change to 0
+   return 0;
 }
 
 void *Mem_Alloc(int size) {
    int i;
    int fsize = size;
+   struct header prev, curr;
    if (size <= 0) {
       perror("Mem_Alloc size equal to or less then zero!");
       exit(1);
@@ -81,14 +93,21 @@ void *Mem_Alloc(int size) {
    } else { //search for BEST_FIT location by finding existing blocks
       for(i = 0;i < numblocks;i++) {
          if (i == 0) {
+            prev = head; 
+         } else if ( i == numblocks-1) {
+            
+         } else {
+            curr = *prev.next;
+            
          }
+         
       } 
    }
    return 0;
 }
 
 int Mem_Free(void *ptr) {
-   return 5;
+   return 0;
 }
 
 void printMemBlock(struct header h) {
