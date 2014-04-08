@@ -66,6 +66,7 @@ int* findsmallest(int size) {
    int count = 0;
    int smallest = totalsize; //set smallest to max
    int* smallestptr = NULL;
+   int *taddr, *finaladdr;
    struct header curr = head; 
    //Look above head
    long freespace = p_head - startaddress;
@@ -80,12 +81,25 @@ int* findsmallest(int size) {
    while (curr.next != NULL) {
       count++;
       printf("Looping through the list!\r\n"); 
-      //TODO add
+      if (count == 1) { //account for address of head
+         taddr = p_head + (head.size*8);
+      } else {
+         taddr = (int*)&curr + (curr.size*8);
+      }
+      finaladdr = (int *)curr.next;  
+      freespace = finaladdr - taddr;
+      //TODO ADD MARKER TO FIND SMALLEST LOOP FOR INSERT && FIX ADDRESS CALCULATION BELOW
+      printf("INSIDE LOOP: freespace = %i (finaladdr %p - taddr %p)!\r\n",freespace,finaladdr,taddr);
+      if ((freespace > size)&&(freespace < smallest)) {
+         smallest = freespace;
+         smallestptr = taddr;
+         p_insert = taddr;
+         printf("found free space in loop!\r\n");
+      } 
       curr = *curr.next; 
    }
    //Look below head
-   int *finaladdr = startaddress + (totalsize*8);
-   int *taddr;
+   finaladdr = startaddress + (totalsize*8);
    if (count == 0) {
       taddr = (p_head+ (head.size*8)); 
    } else {
@@ -93,7 +107,7 @@ int* findsmallest(int size) {
    }
    freespace = (finaladdr - taddr) / 8;
    printf("Searching below last block!\r\n");
-   printf("freespace = %i (finaladdr %p - &curr %p)!\r\n",freespace,finaladdr,taddr);
+   printf("freespace = %i (finaladdr %p - taddr %p)!\r\n",freespace,finaladdr,taddr);
    if ((freespace > size)&&(freespace < smallest)) {
       smallest = freespace;
       smallestptr = taddr;
@@ -102,6 +116,7 @@ int* findsmallest(int size) {
    }
    return smallestptr;
 }
+
 void *Mem_Alloc(int size) {
    int i,foundindex;
    int fsize = size;
