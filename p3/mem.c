@@ -38,6 +38,7 @@ int Mem_Init(int sizeOfRegion) {
    int diff;
    int pagesize = getpagesize(); //page size in bytes  
    int modval = sizeOfRegion % pagesize;
+   //must be page aligned memory request - round up bad requests
    if (modval != 0) {
       diff = pagesize - modval;
       printf("Requested size is not factor of page size (%i) - off by %i!\r\n",pagesize,diff);
@@ -46,23 +47,25 @@ int Mem_Init(int sizeOfRegion) {
    printf("Total size requested is %i.\r\n",size);
    //Using Unix Hints method from the project specifications
    int fd = open("/dev/zero",O_RDWR);
-   //set globals for memory
    startaddress = mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_PRIVATE, fd, 0);  
    totalsize = size;
    if (startaddress == MAP_FAILED) {
       printf("mmap failed!\r\n");
       exit(1);
    } else {
-      printf("mmap call in Mem_Init was a success. startaddress is %p.\r\n",startaddress);
+      int *finalAddr = startaddress + (totalsize*8);
+      printf("************** Mem_Init was a success. startaddress is %p. and final address is %p\r\n",startaddress,finalAddr);
    }
    close(fd);
    return 0;
 }
 
 void *Mem_Alloc(int size) {
-   int i;
+   int i,foundindex;
    int fsize = size;
-   struct header prev, curr;
+   struct header prev, curr, next, smallestfound, out;
+   int smallestsize = size;
+   int *endOfCurr,*endOfFree;
    if (size <= 0) {
       perror("Mem_Alloc size equal to or less then zero!");
       exit(1);
@@ -78,6 +81,7 @@ void *Mem_Alloc(int size) {
    }
    //if no blocks implemented start new mem block at startaddress
    if (numblocks <= 0) {
+      printf("Writing to head - at startaddress! (size = %i)\r\n",fsize);
       head.key = KEY;
       head.size = fsize + sizeof(struct header);
       head.next = NULL;
@@ -85,28 +89,118 @@ void *Mem_Alloc(int size) {
       //copy struct over to allocated memory
       memcpy(startaddress,&head,sizeof(struct header));
       numblocks++;
-      printf("Successfully allocated first block of memory!\r\n");
-      struct header t;
-      memcpy(&t,startaddress,sizeof(struct header));
-      printf("test read off allocated memory - key = %c, size = %i\r\n",t.key,t.size);
       return startaddress;
    } else { //search for BEST_FIT location by finding existing blocks
+      curr = head; 
       for(i = 0;i < numblocks;i++) {
-         if (i == 0) {
+         if (i == 0) { //first block
+            //search for space above the head
+            printf("CHECKING FOR SPACE ABOVE HEAD ( p_head - startaddress = %i > totalsize*8 = %i )\r\n",(int)(p_head - startaddress), totalsize*8);
+            if (p_head - startaddress > (totalsize*8)) {
+               printf("yes\r\n");
+               //TODO allocate new head
+            } else {
+               //check for space below head
+               //if (curr.next != NULL) {
+               if (numblocks == 1) {
+                  printf("Only head exists! ");
+                  //next = *curr.next;
+                  endOfCurr = p_head + (head.size*8); 
+                  endOfFree = p_head + (totalsize*8);
+                  }
+                  /*
+                  long freespace = (long)endOfFree - (long)endOfCurr;
+                  //int freespace = 9;
+                  printf("Checking (endOfFree=%p - endOfCurr=%p)=%i > fsize = %i! ",endOfFree,endOfCurr,(int)freespace,fsize);   
+                  if ((freespace > fsize)&&(smallestsize > fsize)) { //found large enough smallest block
+                     printf("new smallest block found! newsize=%i vs oldsize=%i!\r\n",(int)freespace,smallestsize);
+                     smallestsize = freespace;
+                     smallestfound = curr;
+                  }
+               } else {
+                  printf("Checking space in between head and 2nd block!");
+                  next = *curr.next;
+               } 
+               */
+            }
             prev = head; 
-         } else if ( i == numblocks-1) {
-            
-         } else {
+         } else if (i == numblocks-1) { //last block
             curr = *prev.next;
-            
+            endOfCurr = (int *)&curr + curr.size; //get address of end of last mem block
+            int *finalAddr = (int *)p_head + (totalsize*8);
+            if (finalAddr - endOfCurr > fsize) { //check if there is space
+               if (finalAddr - endOfCurr < smallestsize) {
+                  smallestsize = finalAddr - endOfCurr;
+                  smallestfound = curr; 
+                  foundindex = i;
+               }
+            } 
+         } else { //middle blocks
+            curr = *prev.next;
+            endOfCurr = (int *)&curr + curr.size; //get address of end of last mem block
+            int space = (int *)&curr.next - endOfCurr;
+            if ((space >= fsize)&&(space < smallestsize)) { //found smaller block
+               smallestsize = space;
+               smallestfound = curr;
+               foundindex = i;
+            } 
          }
-         
       } 
+      //Select and write to the smallestblock, unless NULL
+      if (smallestsize == size) {
+         printf("No space found for allocating memory block!!\r\n");
+         m_error = E_NO_SPACE;
+         return NULL;
+      } else {
+         endOfCurr = (int *)&smallestfound + smallestfound.size;
+         out.key = KEY;
+         out.size = fsize + sizeof(struct header);
+         printf("Writing to @%p with free space %i (block is %i bytes)\r\n",endOfCurr,smallestsize,fsize);
+         //insert out into the linked list
+         prev = head;
+         for (i = 0;i < numblocks;i++) {
+            if (prev.next == &smallestfound) { //found header to are going to insert after 
+               curr = *prev.next;
+               out.next = curr.next; //insert link
+               curr.next = &out; 
+               break;
+            } else {
+               prev = *prev.next;
+            }
+         }
+         //allocate memory (save header) and return
+         memcpy(endOfCurr,&out,sizeof(struct header));
+         numblocks++;
+         return endOfCurr;
+      }
    }
    return 0;
 }
 
 int Mem_Free(void *ptr) {
+   int i;
+   struct header rm,temp;
+   if (ptr == NULL) {
+      return -1;
+   }
+   memcpy(&rm,ptr,sizeof(struct header));
+   printf("trying to remove block with key %c, size %i!\r\n",rm.key,rm.size);
+   //check for removing head
+   if (ptr == p_head) {
+      printf("ohh so you want to remove the head of the list... well fine!\r\n");
+      if (numblocks > 1) { 
+         temp = *head.next;
+      }
+      head = temp;
+      numblocks--;
+   } else {
+      temp = *head.next; 
+      for (i = 0;i < numblocks;i++) {
+         if(ptr == &temp) {
+            //found block -- remove
+         }
+      }
+   }
    return 0;
 }
 

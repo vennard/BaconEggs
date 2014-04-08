@@ -1,7 +1,7 @@
 FLAGS_L = -c -fpic
 FLAGS_S = -shared -o 
 FLAGS_R = -lmem -L. -o
-FLAG_SHOW_ERROR = -Wall -Werror
+#FLAG_SHOW_ERROR = -Wall -Werror
 
 HEADERS = mem.h include.h
 
