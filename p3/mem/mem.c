@@ -147,6 +147,7 @@ void *Mem_Alloc(int size) {
       //copy struct over to allocated memory
       memcpy(startaddress,&head,sizeof(struct header));
       numblocks++;
+      printf("Allocated NEW HEAD from EMPTY LIST - numblocks = %i, p_head = %p, size = %i\r\n\r\n",numblocks,p_head,head.size);
       return startaddress;
    } else { //search for BEST_FIT location by finding existing blocks
       int *addr = findsmallest(fsize);
@@ -188,6 +189,7 @@ void *Mem_Alloc(int size) {
          memcpy(addr,&out,sizeof(struct header));
          printf("Finishing call to mem_alloc - returning %p!\r\n\r\n",addr);
          numblocks++;
+         printf("NUMBLOCKS AT - %i\r\n",numblocks);
          return addr;
       }
    }
@@ -195,14 +197,23 @@ void *Mem_Alloc(int size) {
 }
 
 int Mem_Free(void *ptr) {
+   printf("Called MEM_FREE numblocks = %i\r\n",numblocks);
    int i;
    struct header rm,temp,prev,*t;
    if (ptr == NULL) {
       return -1;
    }
+   if (numblocks <= 0) {
+      printf("No blocks available to free!\r\n");
+      return -1;
+   }
    memcpy(&rm,ptr,sizeof(struct header));
    printf("trying to remove block with key %c, size %i!\r\n",rm.key,rm.size);
-   if (rm.key != KEY) return -1; //check for valid header
+   if (rm.key != KEY) {
+      printf("Found invalid key! Failed call to mem_free!\r\n");
+      m_error = E_BAD_POINTER;
+      return -1; //check for valid header
+   }
    //check for removing head
    if (ptr == p_head) {
       printf("ohh so you want to remove the head of the list... well fine!\r\n");
@@ -213,7 +224,6 @@ int Mem_Free(void *ptr) {
          p_head = NULL;
          numblocks = 0;
       }
-      numblocks--;
    } else {
       temp = *head.next; 
       t = (struct header *) p_head;
@@ -232,6 +242,7 @@ int Mem_Free(void *ptr) {
       }
    }
    numblocks--;
+   if (numblocks < 0) numblocks = 0;
    return 0;
 }
 
