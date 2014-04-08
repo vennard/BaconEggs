@@ -25,10 +25,8 @@ int main() {
    int r1 = Mem_Init(4096);
    if (r1 != 0) printf("Mem_Init failed!\r\n");
    int *r2 = Mem_Alloc(8);
-   printf("Called Mem_Alloc(8) with result = %p\r\n",r2);
    int *r3 = Mem_Alloc(16);
-   printf("Called Mem_Alloc(16) with result = %p\r\n",r3);
    int *r4 = Mem_Alloc(32);
-   printf("Called Mem_Alloc(32) with result = %p\r\n",r4);
+   int *r5 = Mem_Alloc(63);
    return 0;
 }
