@@ -1,0 +1,146 @@
+starting build
+
+**********************************************************************
+
+Test build
+build project using make
+
+**********************************************************************
+Trying to clean project using make clean
+make clean
+rm -f mem.o myprog libmem.so
+Trying to build project using make
+make
+gcc -c -fpic mem.c -Wall -Werror
+gcc -shared -o  libmem.so mem.o 
+gcc -lmem -L. -o myprog mem_tester.c -Wall -Werror
+
+
+test build PASSED
+ (build project using make)
+
+starting init
+
+**********************************************************************
+
+Test init
+call Mem_Init with size = 1 page
+
+**********************************************************************
+/afs/cs.wisc.edu/u/b/d/bdavis/public/cs537/tests/3a/tests/init
+Total size requested is 4096.
+mmap call in Mem_Init was a success. startaddress is 0x7f874df12000.
+
+
+test init PASSED
+ (call Mem_Init with size = 1 page)
+
+starting init2
+
+**********************************************************************
+
+Test init2
+init that should be rounded up to 1 page
+
+**********************************************************************
+/afs/cs.wisc.edu/u/b/d/bdavis/public/cs537/tests/3a/tests/init2
+Requested size is not factor of page size (4096) - off by 4095!
+Total size requested is 4096.
+mmap call in Mem_Init was a success. startaddress is 0x7fdcbdc92000.
+Calling Mem_Alloc with size 4048!
+Successfully allocated first block of memory!
+test read off allocated memory - key = z, size = 4064
+
+
+test init2 PASSED
+ (init that should be rounded up to 1 page)
+
+starting badinit
+
+**********************************************************************
+
+Test badinit
+bad argument to Mem_Init
+
+**********************************************************************
+/afs/cs.wisc.edu/u/b/d/bdavis/public/cs537/tests/3a/tests/badinit
+
+
+test badinit PASSED
+ (bad argument to Mem_Init)
+
+starting badinit2
+
+**********************************************************************
+
+Test badinit2
+bad argument to Mem_Init
+
+**********************************************************************
+/afs/cs.wisc.edu/u/b/d/bdavis/public/cs537/tests/3a/tests/badinit2
+
+
+test badinit2 PASSED
+ (bad argument to Mem_Init)
+
+starting doubleinit
+
+**********************************************************************
+
+Test doubleinit
+call init twice
+
+**********************************************************************
+/afs/cs.wisc.edu/u/b/d/bdavis/public/cs537/tests/3a/tests/doubleinit
+Total size requested is 4096.
+mmap call in Mem_Init was a success. startaddress is 0x7f587eaa0000.
+
+
+test doubleinit PASSED
+ (call init twice)
+
+starting alloc
+
+**********************************************************************
+
+Test alloc
+a simple 8 byte allocation
+
+**********************************************************************
+/afs/cs.wisc.edu/u/b/d/bdavis/public/cs537/tests/3a/tests/alloc
+Total size requested is 4096.
+mmap call in Mem_Init was a success. startaddress is 0x7f00b898e000.
+Calling Mem_Alloc with size 8!
+Successfully allocated first block of memory!
+test read off allocated memory - key = z, size = 24
+
+
+test alloc PASSED
+ (a simple 8 byte allocation)
+
+starting alloc2
+
+**********************************************************************
+
+Test alloc2
+a few aligned allocations
+
+**********************************************************************
+/afs/cs.wisc.edu/u/b/d/bdavis/public/cs537/tests/3a/tests/alloc2
+alloc2: alloc2.c:9: main: Assertion `Mem_Alloc(16) != ((void *)0)' failed.
+Total size requested is 4096.
+mmap call in Mem_Init was a success. startaddress is 0x7ff349be0000.
+Calling Mem_Alloc with size 8!
+Successfully allocated first block of memory!
+test read off allocated memory - key = z, size = 24
+Calling Mem_Alloc with size 16!
+No space found for allocating memory block!!
+Failure: /afs/cs.wisc.edu/u/b/d/bdavis/public/cs537/tests/3a/tests/alloc2 returned incorrect status code. Expected 0 got -6
+
+
+test alloc2 FAILED
+ (a few aligned allocations)
+ /afs/cs.wisc.edu/u/b/d/bdavis/public/cs537/tests/3a/tests/alloc2 returned incorrect status code. Expected 0 got -6
+
+Skipped 22 tests.
+To keep testing after failing a test, use flag '-c' or '--continue'
