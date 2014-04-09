@@ -226,6 +226,7 @@ void *Mem_Alloc(int size) {
    addr->key = KEY;
    addr->next = NULL;
    addr->size = fsize + sizeof(struct header);
+   //TODO TEST HERE - try different style write
    printf("------------------------> wrote new block to address %p w/ size %i <-------------------------------\r\n",addr,addr->size);
    int check = insert(addr); //inserts and set next variable in header
    if (check == 0) {
