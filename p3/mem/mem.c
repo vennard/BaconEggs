@@ -66,6 +66,7 @@ int Mem_Init(int sizeOfRegion) {
 //insert in ordered manner aka based on address
 //ptr = address of new block (already confirmed enough space at address)
 int insert(struct header* ptr) {
+   printf("CHECK INSIDE INSERT FUNCTION: wrote to address %p with size %i!!!!!!\r\n",ptr,ptr->size);
    printf("Starting insert at %p... ",ptr);
    struct header *t,*tn;
    t = p_head;
@@ -225,21 +226,18 @@ void *Mem_Alloc(int size) {
    addr->key = KEY;
    addr->next = NULL;
    addr->size = fsize + sizeof(struct header);
-   //out.key = KEY;
-   //out.size = fsize + sizeof(struct header);
-   //out.next = NULL;
-   printf("writing new block to address %p w/ size %i!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\r\n",addr,fsize + sizeof(struct header));
-   //memcpy(addr,&out,sizeof(struct header));
+   printf("------------------------> wrote new block to address %p w/ size %i <-------------------------------\r\n",addr,addr->size);
    int check = insert(addr); //inserts and set next variable in header
    if (check == 0) {
       printf("Insert call was a success!\r\n");
+      printf("CHECK: wrote to address %p with size %i!!!!!!\r\n",addr,addr->size);
       numblocks++;
    } else {
       printf("Insert call was a failure!FAILED !\r\n");
    }
    //allocate memory (save header) and return
    printf("NUMBLOCKS AT - %i\r\n",numblocks);
-   printf("Finishing call to mem_alloc - returning %p!\r\n\r\n",addr);
+   printf("Finishing call to mem_alloc - allocated block size %i to address %p!\r\n\r\n",addr->size,addr);
    return addr;
 }
 
@@ -271,18 +269,12 @@ int Mem_Free(void *ptr) {
 }
 
 void printMemBlock(int size, int* ptr) {
-   //int i;
-   //int printsize = h.size >> 3; //reduce size of print out
    printf("--------------MEMORY BLOCK OF SIZE %i---------@%p-----\r\n",size,ptr);
-   //for (i = 0;i < printsize;i++) printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\r\n"); 
    printf("--------------END OF MEMORY BLOCK------------------\r\n\r\n");
 }
 
 void printFreeBlock(int size, int *addr) {
-   //int i;
-   //int printsize = size >> 3; //reduce size of print out
    printf("--------------FREE BLOCK OF SIZE %i------@%p--------\r\n",size,addr);
-   //for (i = 0;i < printsize;i++) printf("+++++++++++++++++++++++++++++++++++++++++++++++++++++++\r\n"); 
    printf("--------------END OF FREE BLOCK------------------\r\n\r\n");
 }
 
@@ -304,12 +296,9 @@ void Mem_Dump() {
       temp = thead->next;
       while ((temp->next != NULL)&&(temp->key == KEY)) {
          printMemBlock(temp->size,(int*)temp);
-         //printf("temp->next = %p - temp %p + temp->size %i *8\r\n",temp->next,&temp,temp->size);
-         //gap = ((int*)&temp->next - ((int*)&temp + (temp->size*8)))/32;
-         //if (gap > 0) printFreeBlock(gap,(int*)(&temp +(temp->size*8)));
          temp = temp->next;
       }
-      printf("Last Block has address %p with size %i and next %p (%i)\r\n\r\n",temp,temp->size,temp->next,(int*)temp->next);
+      //printf("Last Block has address %p with size %i and next %p (%i)\r\n\r\n",temp,temp->size,temp->next,(int*)temp->next);
       printMemBlock(temp->size,(int*)temp);
       gap = (finaladdress - ((int*)temp + (temp->size*8)))/8;
       printf("LAST GAP IS size %i!!!\r\n",gap);

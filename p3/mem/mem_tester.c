@@ -27,12 +27,10 @@ int main() {
    Mem_Alloc(1);
    Mem_Alloc(5);
    Mem_Alloc(14);
-   /*
    Mem_Alloc(8);
    Mem_Alloc(1);
    Mem_Alloc(4);
-   Mem_Alloc(9);
-   */
+   //Mem_Alloc(9);
    //Mem_Alloc(33);
    //Mem_Alloc(55);
 
