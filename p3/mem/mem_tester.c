@@ -24,18 +24,19 @@ int main() {
    printf("taking apart free2\r\n"); 
 
    Mem_Init(4096);
-   void* ptr[4];
+   Mem_Alloc(1);
+   Mem_Alloc(5);
+   Mem_Alloc(14);
+   Mem_Alloc(8);
+   Mem_Alloc(1);
+   Mem_Alloc(4);
+   Mem_Alloc(9);
+   //Mem_Alloc(33);
+   //Mem_Alloc(55);
 
-   ptr[0] = Mem_Alloc(8);
-   ptr[1] = Mem_Alloc(16);
-   int a = Mem_Free(ptr[0]); 
-   int b = Mem_Free(ptr[1]);
-   printf("COMPLETED 2 FREES a = %i, b = %i\r\n",a,b);
-   ptr[2] = Mem_Alloc(32);
-   ptr[3] = Mem_Alloc(8);
-   int c = Mem_Free(ptr[2]);
-   int d = Mem_Free(ptr[3]);
-   printf("COMPLETED 2 FREES c = %i, d = %i\r\n",c,d);
+   Mem_Dump();
+
+
 
    return 0;
 }
