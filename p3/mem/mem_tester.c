@@ -30,9 +30,9 @@ int main() {
    Mem_Alloc(8);
    Mem_Alloc(1);
    Mem_Alloc(4);
-   //Mem_Alloc(9);
-   //Mem_Alloc(33);
-   //Mem_Alloc(55);
+   Mem_Alloc(9);
+   Mem_Alloc(33);
+   Mem_Alloc(55);
 
    Mem_Dump();
 

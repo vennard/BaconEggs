@@ -38,6 +38,7 @@ int Mem_Init(int sizeOfRegion) {
    p_head = NULL;
    int diff;
    int pagesize = getpagesize(); //page size in bytes  
+   printf("PAGESIZE = %i\r\n",pagesize);
    int modval = sizeOfRegion % pagesize;
    //must be page aligned memory request - round up bad requests
    if (modval != 0) {
@@ -54,8 +55,9 @@ int Mem_Init(int sizeOfRegion) {
       printf("mmap failed!\r\n");
       exit(1);
    } else {
-      int *finalAddr = startaddress + (totalsize*8);
+      int *finalAddr = startaddress + totalsize;
       finaladdress = finalAddr;
+      int testsize = finalAddr - startaddress;
       printf("************** Mem_Init was a success. startaddress is %p. and final address is %p ***************\r\n\r\n",startaddress,finalAddr);
    }
    close(fd);
@@ -147,7 +149,7 @@ struct header* findsmallest(int size) {
    int *taddr;
 
    //Look for space above head
-   long freespace = ((int*)p_head - startaddress) / 8;
+   long freespace = (int*)p_head - startaddress;
    if (freespace > size) {
       smallest = freespace;   
       smallestptr = (struct header *) startaddress;
@@ -156,9 +158,9 @@ struct header* findsmallest(int size) {
    printf("searching...\r\n");
    while (curr != NULL) {
       tn = curr->next;
-      taddr = (int*)curr + (curr->size*8);
+      taddr = (int*)curr + (curr->size);
       if (tn == NULL) { //found last block
-         freespace = (finaladdress - taddr) / 8;
+         freespace = (finaladdress - taddr) ;
          printf("------>freespace (%i) below last block (addr %p)...",freespace,curr);
          if ((freespace > size)&&(freespace < smallest)) {
             smallest = freespace;
@@ -166,7 +168,7 @@ struct header* findsmallest(int size) {
             printf(" found smallest spot at %p. ",taddr);
          }
       } else { //look in between blocks for space
-         freespace = ((int*)tn - taddr) / 8;
+         freespace = ((int*)tn - taddr);
          printf("------>freespace (%i) inbetween block %p and %p...",freespace,curr,tn);
          if ((freespace > size)&&(freespace < smallest)) {
             smallest = freespace;
@@ -233,7 +235,14 @@ void *Mem_Alloc(int size) {
    test.size = fsize + sizeof(struct header);
    memcpy(addr,&test,sizeof(struct header));
 */
+   struct header test = *addr;
+   printf("1: DATA IN TEST: key: %c, size: %i, next: %p\r\n",test.key,test.size,test.next);
+   printf("2: DATA IN TEST: key: %c, size: %i, next: %p\r\n",test.key,test.size,test.next);
+   test = *addr;
+   printf("3: DATA IN TEST: key: %c, size: %i, next: %p\r\n",test.key,test.size,test.next);
+   
    printf("1: DATA AT ADDR: key: %c, size: %i, next: %p\r\n",addr->key,addr->size,addr->next);
+
    printf("2: DATA AT ADDR: key: %c, size: %i, next: %p\r\n",addr->key,addr->size,addr->next);
    printf("3: DATA AT ADDR: key: %c, size: %i, next: %p\r\n",addr->key,addr->size,addr->next);
    printf("4: DATA AT ADDR: key: %c, size: %i, next: %p\r\n",addr->key,addr->size,addr->next);
@@ -304,7 +313,7 @@ void Mem_Dump() {
    if (numblocks <= 0) printf("No memory has been mapped, full memory of size %i available.\r\n",totalsize);
    if (numblocks > 0) { //Navigate through linked list of mem and print each section (including free sections)
       if (((int*)p_head - startaddress) > 0) {
-         printf("GAP ON TOP OF MEM STACK - size = %i\r\n",((int*)p_head - startaddress)/8);
+         printf("GAP ON TOP OF MEM STACK - size = %i\r\n",((int*)p_head - startaddress));
       }
       printf("\r\n HEAD of list: size %i @ %p! ------------------------------>\r\n",thead->size,p_head);
       printf("--------------END OF MEMORY BLOCK------------------\r\n\r\n");
@@ -315,7 +324,7 @@ void Mem_Dump() {
       }
       //printf("Last Block has address %p with size %i and next %p (%i)\r\n\r\n",temp,temp->size,temp->next,(int*)temp->next);
       printMemBlock(temp->size,(int*)temp);
-      gap = (finaladdress - ((int*)temp + (temp->size*8)))/8;
+      gap = (finaladdress - ((int*)temp + (temp->size)));
       printf("LAST GAP IS size %i!!!\r\n",gap);
    }
 }
