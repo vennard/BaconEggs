@@ -24,15 +24,15 @@ int main() {
    printf("taking apart free2\r\n"); 
 
    Mem_Init(4096);
-   Mem_Alloc(1);
-   Mem_Alloc(5);
-   Mem_Alloc(14);
-   Mem_Alloc(8);
-   Mem_Alloc(1);
-   Mem_Alloc(4);
-   Mem_Alloc(9);
-   Mem_Alloc(33);
-   Mem_Alloc(55);
+   void *ptr[4];
+   ptr[0] = Mem_Alloc(800);
+   ptr[1] = Mem_Alloc(800);
+   ptr[2] = Mem_Alloc(800);
+   ptr[3] = Mem_Alloc(800);
+   Mem_Free(ptr[1]);
+   Mem_Free(ptr[2]);
+   ptr[2] = Mem_Alloc(1600);
+   
 
    Mem_Dump();
 

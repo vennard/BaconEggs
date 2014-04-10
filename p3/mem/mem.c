@@ -225,9 +225,11 @@ void *Mem_Alloc(int size) {
          return NULL;
       } 
    }
+   printf("CHECK BEFORE SEG FAULT: wrote to address %p with size %i!!!!!!\r\n",addr,addr->size);
    addr->key = KEY;
    addr->next = NULL;
    addr->size = fsize + sizeof(struct header);
+   printf("HERE WAS SEG FAULT!!!!\r\n");
    //TODO TEST HERE - try different style write
    /*struct header test;
    test.key = KEY;
@@ -235,19 +237,6 @@ void *Mem_Alloc(int size) {
    test.size = fsize + sizeof(struct header);
    memcpy(addr,&test,sizeof(struct header));
 */
-   struct header test = *addr;
-   printf("1: DATA IN TEST: key: %c, size: %i, next: %p\r\n",test.key,test.size,test.next);
-   printf("2: DATA IN TEST: key: %c, size: %i, next: %p\r\n",test.key,test.size,test.next);
-   test = *addr;
-   printf("3: DATA IN TEST: key: %c, size: %i, next: %p\r\n",test.key,test.size,test.next);
-   
-   printf("1: DATA AT ADDR: key: %c, size: %i, next: %p\r\n",addr->key,addr->size,addr->next);
-
-   printf("2: DATA AT ADDR: key: %c, size: %i, next: %p\r\n",addr->key,addr->size,addr->next);
-   printf("3: DATA AT ADDR: key: %c, size: %i, next: %p\r\n",addr->key,addr->size,addr->next);
-   printf("4: DATA AT ADDR: key: %c, size: %i, next: %p\r\n",addr->key,addr->size,addr->next);
-   //addr = (addr + 1); //TODO for some unknown reason this locks previous reads to constant value messes everything else up obviously
-   printf("5: DATA AT ADDR: key: %c, size: %i, next: %p\r\n",addr->key,addr->size,addr->next);
    printf("------------------------> wrote new block to address %p w/ size %i <-------------------------------\r\n",addr,addr->size);
    //memcpy(addr,&test,sizeof(struct header));
    //printf("DATA AT ADDR: key: %c, size: %i, next: %p\r\n",addr->key,addr->size,addr->next);
