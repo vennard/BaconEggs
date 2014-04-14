@@ -68,7 +68,6 @@ int Mem_Init(int sizeOfRegion) {
 //insert in ordered manner aka based on address
 //ptr = address of new block (already confirmed enough space at address)
 int insert(struct header* ptr) {
-   printf("CHECK INSIDE INSERT FUNCTION: wrote to address %p with size %i!!!!!!\r\n",ptr,ptr->size);
    printf("Starting insert at %p... ",ptr);
    struct header *t,*tn;
    t = p_head;
@@ -107,16 +106,37 @@ int insert(struct header* ptr) {
 //removes a memory block from the linked list
 //TODO add invalidate (aka change key when you remove)
 int removeBlock(struct header* ptr) {
-   struct header *temp,*prev,*thead;
-   thead = p_head;
    printf("Starting remove method - removing at %p\r\n",ptr);
+   struct header *temp,*prev,*next;
+   temp = p_head;
+   prev = NULL;
+   while (temp != NULL) {
+      next = temp->next; 
+      if (temp == ptr) { //found block to remove
+         if (prev == NULL) { //remove item as head
+            p_head->key = 'l'; //invalidate key
+            p_head = p_head->next;
+            return 0;
+         } else {
+            prev->next = next;
+            temp->key = 'l'; 
+            temp->next = NULL;
+            return 0;
+         }
+      }
+      prev = temp;
+      temp = temp->next;
+   } 
+   return -1;
+}
+/*
    if (p_head == ptr) { //removing head of list
-      p_head = thead->next; 
+      p_head = ntemp->next; 
       printf("Removed head of the list, new head at %p...",p_head);
       return 0; 
    } else {
-      temp = thead->next; //starting at block past head
-      prev = thead;
+      temp = ntemp->next; //starting at block past head
+      prev = ntemp;
       printf("Searching through linked list...");
       while (temp->next != NULL) {
          if (temp == ptr) { //found block to remove
@@ -138,6 +158,7 @@ int removeBlock(struct header* ptr) {
    printf("Failed to remove the block! FAILED\r\n");
    return -1;
 }
+*/
 
 //Finds smallest open block of memory that fits the size and returns the address
 struct header* findsmallest(int size) {
@@ -161,7 +182,7 @@ struct header* findsmallest(int size) {
       taddr = (void *)curr + (curr->size);
       if (tn == NULL) { //found last block
          freespace = (finaladdress - taddr) ;
-         printf("------>freespace (%i) below last block (addr %p)...",freespace,curr);
+        // printf("------>freespace (%i) below last block (addr %p)...",freespace,curr);
          if ((freespace > size)&&(freespace < smallest)) {
             smallest = freespace;
             smallestptr = (struct header *)taddr; 
@@ -169,14 +190,14 @@ struct header* findsmallest(int size) {
          }
       } else { //look in between blocks for space
          freespace = ((void*)tn - taddr);
-         printf("------>freespace (%i) inbetween block %p and %p...",freespace,curr,tn);
+        // printf("------>freespace (%i) inbetween block %p and %p...",freespace,curr,tn);
          if ((freespace > size)&&(freespace < smallest)) {
             smallest = freespace;
             smallestptr = (struct header *) taddr; 
             printf(" found smallest spot at %p. ",taddr);
          }
       }
-      printf("done checking block(%p).\r\n",curr);
+      //printf("done checking block(%p).\r\n",curr);
       curr = tn; 
    }
    printf("done searching through linked list!\r\n");
@@ -201,7 +222,6 @@ void *Mem_Alloc(int size) {
       printf("size not 8-byte aligned changing to %i!\r\n",fsize);
    }
    //if no blocks implemented start new mem block at startaddress
-   //if (numblocks <= 0) {
    if (p_head == NULL) {
       printf("P_HEAD == NULL ------ Writing to head - at startaddress! (size = %i)\r\n",fsize);
       addr = (struct header *)startaddress;
@@ -214,31 +234,18 @@ void *Mem_Alloc(int size) {
          return NULL;
       } 
    }
-   printf("CHECK BEFORE SEG FAULT: wrote to address %p with size %i!!!!!!\r\n",addr,addr->size);
    addr->key = KEY;
    addr->next = NULL;
    addr->size = fsize + sizeof(struct header);
-   printf("HERE WAS SEG FAULT!!!!\r\n");
-   //TODO TEST HERE - try different style write
-   /*struct header test;
-   test.key = KEY;
-   test.next = NULL;
-   test.size = fsize + sizeof(struct header);
-   memcpy(addr,&test,sizeof(struct header));
-*/
    printf("------------------------> wrote new block to address %p w/ size %i <-------------------------------\r\n",addr,addr->size);
-   //memcpy(addr,&test,sizeof(struct header));
-   //printf("DATA AT ADDR: key: %c, size: %i, next: %p\r\n",addr->key,addr->size,addr->next);
    int check = insert(addr); //inserts and set next variable in header
    if (check == 0) {
       printf("Insert call was a success!\r\n");
-      printf("CHECK: wrote to address %p with size %i!!!!!!\r\n",addr,addr->size);
       numblocks++;
    } else {
       printf("Insert call was a failure!FAILED !\r\n");
    }
    //allocate memory (save header) and return
-   printf("NUMBLOCKS AT - %i\r\n",numblocks);
    printf("Finishing call to mem_alloc - allocated block size %i to address %p!\r\n\r\n",addr->size,addr);
    return addr;
 }
@@ -257,7 +264,7 @@ int Mem_Free(void *ptr) {
    if (rm->key != KEY) {
       printf("Found invalid key! Failed call to mem_free!\r\n");
       m_error = E_BAD_POINTER;
-      return -1; //check for valid header
+      return -1; 
    }
    int check = removeBlock(ptr);
    if (check == 0) {
@@ -284,8 +291,8 @@ void Mem_Dump() {
    printf("Calling Mem_Dump().................................\r\n\r\n");
    printf("--------startaddress %p ------------------- finaladdress %p ----------- \r\n\r\n",startaddress,finaladdress);
    struct header *temp;  
-   struct header *thead;
-   thead = p_head;
+   struct header *ntemp;
+   ntemp = p_head;
    int gap;
    if (totalsize <= 0) printf("Memory has not been initialized! Failed!\r\n");
    if (numblocks <= 0) printf("No memory has been mapped, full memory of size %i available.\r\n",totalsize);
@@ -293,9 +300,9 @@ void Mem_Dump() {
       if (((void*)p_head - startaddress) > 0) {
          printf("GAP ON TOP OF MEM STACK - size = %i\r\n",((void*)p_head - startaddress));
       }
-      printf("\r\n HEAD of list: size %i @ %p! ------------------------------>\r\n",thead->size,p_head);
+      printf("\r\n HEAD of list: size %i @ %p! ------------------------------>\r\n",ntemp->size,p_head);
       printf("--------------END OF MEMORY BLOCK------------------\r\n\r\n");
-      temp = thead->next;
+      temp = ntemp->next;
       while ((temp->next != NULL)&&(temp->key == KEY)) {
          printMemBlock(temp->size,(void*)temp);
          temp = temp->next;
