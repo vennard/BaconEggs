@@ -3,6 +3,12 @@
 
 struct stat;
 
+typedef struct {
+   int flag;
+}lock_t;
+
+extern lock_t lock;
+
 // system calls
 int fork(void);
 int exit(void) __attribute__((noreturn));
@@ -25,6 +31,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int clone(void);
+int join(void);
 
 // user library functions (ulib.c)
 int stat(char*, struct stat*);
@@ -39,6 +47,10 @@ void* memset(void*, int, uint);
 void* malloc(uint);
 void free(void*);
 int atoi(const char*);
+int thread_create(void (void*), void *arg);
+int lock_init(lock_t *);
+int lock_acquire(lock_t *);
+int lock_release(lock_t *);
 
 #endif // _USER_H_
 
