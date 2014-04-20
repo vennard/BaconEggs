@@ -89,12 +89,24 @@ sys_uptime(void)
   return xticks;
 }
 
+//TODO
 int sys_clone(void)
 {
-  return 2;
+  void *fcn, *arg, *stack;   
+  fcn = 0;
+  arg = 0;
+  stack = 0;
+  if (argptr(0, (void *)fcn, sizeof(fcn)) < 0) return -1; 
+  if (argptr(1, (void *)arg, sizeof(arg)) < 0) return -1; 
+  if (argptr(2, (void *)stack, sizeof(stack)) < 0) return -1; 
+  return 0;
 }
 
+//TODO
 int sys_join(void)
 {
-  return 3;
+  void **stack;
+  stack = 0;
+  if (argptr(0, (void *)stack, sizeof(stack)) < 0) return -1;
+  return 0;
 }

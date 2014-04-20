@@ -13,7 +13,7 @@ int main(void) {
 
    printf(0,"Trying to call clone... ");
    int a = clone();
-   if (a == 2) {
+   if (a == 0) {
       printf(0,"success!\r\n");
    } else {
       printf(0,"failed!\r\n");
@@ -21,7 +21,7 @@ int main(void) {
 
    printf(0,"Trying to call join... ");
    int b = join();
-   if (b == 3) {
+   if (b == 0) {
       printf(0,"success!\r\n");
    } else {
       printf(0,"failed!\r\n");
@@ -30,7 +30,7 @@ int main(void) {
 
    printf(0,"Trying to call thread_create... ");
    int c = thread_create(ptr, ptr);
-   if (c == 4) {
+   if (c == 0) {
       printf(0,"success!\r\n");
    } else {
       printf(0,"failed!\r\n");
@@ -38,7 +38,7 @@ int main(void) {
 
    printf(0,"Trying to call lock_init... ");
    int d = lock_init(&lock);
-   if (d == 6)  {
+   if (d == 0)  {
       printf(0,"success!\r\n");
    } else {
       printf(0,"failed!\r\n");
@@ -46,7 +46,7 @@ int main(void) {
 
    printf(0,"Trying to call lock_acquire... ");
    int e = lock_acquire(&lock);
-   if (e == 7) {
+   if (e == 0) {
       printf(0,"success!\r\n");
    } else {
       printf(0,"failed!\r\n");
@@ -54,7 +54,7 @@ int main(void) {
 
    printf(0,"Trying to call lock_release... ");
    int f = lock_release(&lock);
-   if (f == 8) {
+   if (f == 0) {
       printf(0,"success!\r\n");
    } else {
       printf(0,"failed!\r\n");
