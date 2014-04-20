@@ -29,8 +29,10 @@ pinit(void)
 // If found, change state to EMBRYO and initialize
 // state required to run in the kernel.
 // Otherwise return 0.
-static struct proc*
-allocproc(void)
+//static struct proc*
+//TODO added thread, = 1 if thread, 0 else
+struct proc*
+allocproc(int thread)
 {
   struct proc *p;
   char *sp;
@@ -46,28 +48,34 @@ found:
   p->state = EMBRYO;
   p->pid = nextpid++;
   release(&ptable.lock);
+  
+  if (thread == 0) { //allocating normal proc
+    // Allocate kernel stack if possible.
+    if((p->kstack = kalloc()) == 0){
+      p->state = UNUSED;
+      return 0;
+    }
+    sp = p->kstack + KSTACKSIZE;
+  
+    // Leave room for trap frame.
+    sp -= sizeof *p->tf;
+    p->tf = (struct trapframe*)sp;
+  
+    // Set up new context to start executing at forkret,
+    // which returns to trapret.
+    sp -= 4;
+    *(uint*)sp = (uint)trapret;
 
-  // Allocate kernel stack if possible.
-  if((p->kstack = kalloc()) == 0){
-    p->state = UNUSED;
-    return 0;
+    sp -= sizeof *p->context;
+    p->context = (struct context*)sp;
+    memset(p->context, 0, sizeof *p->context);
+    p->context->eip = (uint)forkret;
+  } else { //allocate a thread
+     //set kstack = stack
+     //set pc = fcn
+     //set pointer to arg above sp
+     //set fake return PC at top of stack
   }
-  sp = p->kstack + KSTACKSIZE;
-  
-  // Leave room for trap frame.
-  sp -= sizeof *p->tf;
-  p->tf = (struct trapframe*)sp;
-  
-  // Set up new context to start executing at forkret,
-  // which returns to trapret.
-  sp -= 4;
-  *(uint*)sp = (uint)trapret;
-
-  sp -= sizeof *p->context;
-  p->context = (struct context*)sp;
-  memset(p->context, 0, sizeof *p->context);
-  p->context->eip = (uint)forkret;
-
   return p;
 }
 
@@ -78,7 +86,7 @@ userinit(void)
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
   
-  p = allocproc();
+  p = allocproc(0);
   acquire(&ptable.lock);
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
@@ -131,7 +139,7 @@ fork(void)
   struct proc *np;
 
   // Allocate process.
-  if((np = allocproc()) == 0)
+  if((np = allocproc(0)) == 0)
     return -1;
 
   // Copy process state from p.

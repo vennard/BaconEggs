@@ -99,6 +99,7 @@ sys_uptime(void)
 int sys_clone(void)
 {
   int i, pid;
+  char *sp;
   struct proc *np;
   void *fcn, *arg, *stack;   
   fcn = 0; 
@@ -108,26 +109,32 @@ int sys_clone(void)
   if (argptr(1, (void *)arg, sizeof(arg)) < 0) return -1; 
   if (argptr(2, (void *)stack, sizeof(stack)) < 0) return -1; 
    
-  np = proc; //TODO REMOVE THIS IS TOTALLY WRONG
-  //acquire(&ptable.lock);
-  //for(np = ptable.proc;np
-  //release(&ptable.lock);
-  //np->thread = 1; 
   //allocate process -- finds in table and sets state to EMBRYO
-  //if ((np = allocproc()) == 0) return -1; 
-  //acquire(&lock);
-  //np->kstack = stack; TODO PUT BACK IN
-  //TODO save arg on the stack
-    
+  if ((np = allocproc(1)) == 0) return -1; 
   
-  //copy process state from p 
-  //copyuvm - copies page table (address space)
-  if ((np->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0) {
-    kfree(np->kstack); //free page of mem at kstack
-    np->kstack = 0; //set bottom of stack to 0
-    np->state = UNUSED; 
-    return -1;
-  }
+  np->kstack = stack; //save new stack address
+  sp = np->kstack + KSTACKSIZE; //sp at bottom of stack
+  sp -= sizeof(arg); //make room for arg
+  copyout(proc->pgdir, (uint)sp, arg, sizeof(arg)); //copy arg ptr to stack  
+  //leave room for trap frame
+  sp -= sizeof(*np->tf); 
+  np->tf = (struct trapframe*)sp;
+
+  //setup new context
+  sp -= 4;
+  *(uint*)sp = (uint)0xffffffff;
+ 
+  sp -= sizeof(*np->context);
+  np->context = (struct context*)sp;
+  memset(np->context, 0, sizeof(*np->context));
+  np->context->eip = (uint)fcn; //set eip to next instruction to be executed
+
+  uint addr = 0xFF;
+  copyout(proc->pgdir, (uint)np->kstack, &addr, sizeof(addr)); //copy bogus return addr
+
+  //set address space equal to parents address space
+  np->pgdir = proc->pgdir;
+  
   np->sz = proc->sz; //copy size of process mem
   np->parent = proc; //set parent process
   *np->tf = *proc->tf; //set trapframe for syscalls
