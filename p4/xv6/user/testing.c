@@ -36,6 +36,14 @@ int main(void) {
       printf(0,"failed!\r\n");
    }
 
+   printf(0,"Trying to call thread_join... ");
+   int g = thread_join();
+   if (g == 0) {
+      printf(0,"success!\r\n");
+   } else {
+      printf(0,"failed!\r\n");
+   }
+
    printf(0,"Trying to call lock_init... ");
    int d = lock_init(&lock);
    if (d == 0)  {
