@@ -98,17 +98,19 @@ sys_uptime(void)
  */
 int sys_clone(void)
 {
-  int i, pid;
-  char *sp;
-  struct proc *np;
   void *fcn, *arg, *stack;   
   fcn = 0; 
   arg = 0;
   stack = 0;
-  if (argptr(0, (void *)fcn, sizeof(fcn)) < 0) return -1; 
-  if (argptr(1, (void *)arg, sizeof(arg)) < 0) return -1; 
-  if (argptr(2, (void *)stack, sizeof(stack)) < 0) return -1; 
-   
+  if (argptr(0, (char**)&fcn, sizeof(fcn)) < 0) return -1; 
+  if (argptr(1, (char**)&arg, sizeof(arg)) < 0) return -1; 
+  if (argptr(2, (char**)&stack, sizeof(stack)) < 0) return -1; 
+  cprintf("IN SYS_CLONE: fcn = %p, arg = %d, stack = %p\r\n",fcn,0,stack); 
+  int result = clone(fcn, arg, stack);
+  return result;
+   //TODO call clone routine in proc.c   
+   //TODO declare in proc.h
+   /*
   //allocate process -- finds in table and sets state to EMBRYO
   if ((np = allocproc(1)) == 0) return -1; 
   
@@ -148,14 +150,17 @@ int sys_clone(void)
   pid = np->pid;             
   np->state = RUNNABLE;
   safestrcpy(np->name, proc->name, sizeof(proc->name));
-  return pid;
+*/
+  return 0;
 }
 
 //TODO
 int sys_join(void)
 {
-  void **stack;
+  void *stack; //return &stack (void **)
   stack = 0;
   if (argptr(0, (void *)stack, sizeof(stack)) < 0) return -1;
-  return 0;
+
+  int result = join(&stack);
+  return result;
 }

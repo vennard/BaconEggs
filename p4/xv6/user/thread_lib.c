@@ -10,13 +10,24 @@
 lock_t lock;
 
 int thread_create(void (*start_routine) (void *), void *arg) {
+   void *stack;
   //call malloc to create a new user stack
-  //call clone() to create the child thread 
-  return 0;
+  stack = malloc(sizeof(4096)); //PGSIZE = 4096
+  int result = clone(start_routine, arg, stack);
+  
+  if (result == 0) { // process is now parent thread 
+      printf(0,"This is parent thread\r\n");
+  } else { //process is child thread
+      printf(0,"This is child thread\r\n");
+  }
+  return result;
 }
 
 int thread_join() {
-  return 0;
+  void *childstack;
+  int result = join(&childstack);
+  free(childstack); 
+  return result;
 }
 
 int lock_init(lock_t* l) {

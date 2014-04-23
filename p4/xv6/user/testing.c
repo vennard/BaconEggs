@@ -6,11 +6,39 @@
 #include "syscall.h"
 #include "traps.h"
 
+int ppid;
+volatile int global = 1;
+#define PGSIZE (4096)
+
+void worker(void *arg_ptr);
 
 int main(void) {
-   printf(0,"Starting user testing...\r\n");
-   void *ptr;
+   printf(0,"Starting user testing... ");
 
+   ppid = getpid();
+   void *stack = malloc(PGSIZE*2);
+   printf(0,"allocated stack! ");
+   if((uint)stack % PGSIZE)
+     stack = stack + (4096 - (uint)stack % PGSIZE);
+   printf(0,"page aligned request... now calling clone\r\n ");
+   printf(0,"fcn = %p, 0, stack = %p!!!\r\n",worker,stack);
+   int clone_pid = clone(worker, 0, stack);
+   printf(0, "clone_pid = %d\r\n",clone_pid);
+   while(global != 5);
+   printf(0, "TEST PASSED\n");
+
+   exit();
+}
+
+void
+worker(void *arg_ptr) {
+   //assert(global == 1);
+   global = 5;
+   exit();
+}
+
+
+/*
    printf(0,"Trying to call clone... ");
    int a = clone();
    if (a == 0) {
@@ -18,7 +46,6 @@ int main(void) {
    } else {
       printf(0,"failed!\r\n");
    }
-
    printf(0,"Trying to call join... ");
    int b = join();
    if (b == 0) {
@@ -69,3 +96,4 @@ int main(void) {
    }
    exit();
 }
+*/
