@@ -30,9 +30,8 @@ pinit(void)
 // state required to run in the kernel.
 // Otherwise return 0.
 //static struct proc*
-//TODO added thread, = 1 if thread, 0 else
 struct proc*
-allocproc(int thread)
+allocproc(void)
 {
   struct proc *p;
   char *sp;
@@ -49,7 +48,6 @@ found:
   p->pid = nextpid++;
   release(&ptable.lock);
   
-  if (thread == 0) { //allocating normal proc
     // Allocate kernel stack if possible.
     if((p->kstack = kalloc()) == 0){
       p->state = UNUSED;
@@ -70,12 +68,6 @@ found:
     p->context = (struct context*)sp;
     memset(p->context, 0, sizeof *p->context);
     p->context->eip = (uint)forkret;
-  } else { //allocate a thread
-     //set kstack = stack
-     //set pc = fcn
-     //set pointer to arg above sp
-     //set fake return PC at top of stack
-  }
   return p;
 }
 
@@ -86,7 +78,7 @@ userinit(void)
   struct proc *p;
   extern char _binary_initcode_start[], _binary_initcode_size[];
   
-  p = allocproc(0);
+  p = allocproc();
   acquire(&ptable.lock);
   initproc = p;
   if((p->pgdir = setupkvm()) == 0)
@@ -131,82 +123,46 @@ growproc(int n)
 
 int clone(void(*fcn) (void*) , void *arg, void *stack)
 {
-  cprintf("Made it to the clone call in proc.c!\r\n");
   cprintf("IN CLONE CALL: fcn - %p, arg - %d, stack - %p!\r\n",fcn,0,stack);
   int i, pid;
   struct proc *p; 
-  char *sp = (char*) stack; 
-  
-  //allocate process
-  acquire(&ptable.lock);
-  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++)
-    if(p->state == UNUSED)
-      goto found;
-  release(&ptable.lock);
-  return 0;
 
-found:
-  p->state = EMBRYO;
-  p->pid = nextpid++;
-  p->kstack = stack;
-  release(&ptable.lock);
+  if ((p = allocproc()) == 0) return -1;
 
-/*
-  if ((p->kstack = kalloc()) == 0) {
-    p->state = UNUSED;
-    return 0;
-  }
-*/
-
-  sp = p->kstack + KSTACKSIZE; //sp now at bottom of stack
-  cprintf("POINTER = %p, p->kstack = %p, KSTACKSIZE = %d\r\n",sp,p->kstack,KSTACKSIZE);
-  
-  //Save off arg
-  sp -= (sizeof(arg));
-  copyout(proc->pgdir, (uint)sp, arg, sizeof(arg));
-
-  //Save off bogus return address at top of stack
-  uint temp = 0xFFFFFFFF;
-  copyout(proc->pgdir, (uint)stack, (void*)&temp , 1);
-
-  //sp -= sizeof *p->tf;  //leave room for trap fram
-  //p->tf = (struct trapframe*) sp;
- 
-  //setup new context to start executing at fcn
-  sp -= 4;
-  *(uint*)sp = (uint)trapret;
-  sp -= sizeof *p->context;
-  p->context = (struct context*) sp;
-  memset(p->context, 0, sizeof *p->context);
-  p->context->eip = (uint)forkret;
- // p->context->eip = (uint)fcn;
-
-  cprintf("Finished allocating new clone... ");
-  
-  cprintf("PID IS =%d\r\n",p->pid);
-
-  //copy process state from p
-  if ((p->pgdir = copyuvm(proc->pgdir, proc->sz)) == 0) {
-      kfree(p->kstack);
-      p->kstack = 0;
-      p->state = UNUSED;
-      return -1;
-  }
+  //use same address space
   p->sz = proc->sz;
   p->parent = proc;
+  p->pgdir = proc->pgdir; //use same pagetable
   *p->tf = *proc->tf;
+
+  cprintf("Using same page table... ");
 
   //clear %eax so that clone returns 0 in the child TODO check
   p->tf->eax = 0;
 
-  for(i = 0;i < NOFILE; i++) 
-    if (proc->ofile[i]) p->ofile[i] = filedup(proc->ofile[i]);
+  //copy over fcn 
+  p->tf->eip = (uint) fcn;
+  p->tf->esp = (uint) stack;
+  //p->context->eip = (uint) fcn;
+
+  cprintf("Saved eip, esp, and eip in trapframe and context... ");
+
+  //Save off return address and arg
+  uint temp = 0xffffffff;
+  memmove(stack, &temp, sizeof(uint)); //copy return address to top of stack
+  //memmove(stack + PGSIZE - sizeof(arg), &arg, sizeof(arg)); //assumes we are moving pointer to arg onto stack
+  
+  cprintf("saved *arg and return addr bottom and top of stack... ");
+
+  for(i = 0;i < NOFILE; i++) if (proc->ofile[i]) p->ofile[i] = filedup(proc->ofile[i]);
   p->cwd = idup(proc->cwd);
   pid = p->pid;
-  p->state = RUNNABLE;
   p->thread = 1;
   safestrcpy(p->name, proc->name, sizeof(proc->name));
-  cprintf("RETURNING FROM CLONE WITH pid=%d\r\n",pid);
+  cprintf("\r\nRETURNING FROM CLONE PROC=%s WITH pid=%d\r\n",p->name,pid);
+  cprintf("-------->going to start at tf->eip = %d, and context->eip - %d\r\n",p->tf->eip,p->context->eip);
+  cprintf("WHIIIIIIIICH is just (uint) fcn = %d\r\n",(uint)fcn);
+  p->state = RUNNABLE;
   return pid;  
 }
 
@@ -224,7 +180,7 @@ fork(void)
   struct proc *np;
 
   // Allocate process.
-  if((np = allocproc(0)) == 0)
+  if((np = allocproc()) == 0)
     return -1;
 
   // Copy process state from p.
@@ -310,6 +266,7 @@ wait(void)
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->parent != proc)
         continue;
+      //if(p->thread == 1) continue; //TODO added to avoid waiting for threads
       havekids = 1;
       if(p->state == ZOMBIE){
         // Found one.

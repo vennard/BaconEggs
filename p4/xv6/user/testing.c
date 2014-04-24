@@ -24,15 +24,16 @@ int main(void) {
    printf(0,"fcn = %p, 0, stack = %p!!!\r\n",worker,stack);
    int clone_pid = clone(worker, 0, stack);
    printf(0, "clone_pid = %d\r\n",clone_pid);
-   while(global != 5);
+   sleep(10);
+   //while(global != 5) ;
    printf(0, "TEST PASSED\n");
-
    exit();
 }
 
 void
 worker(void *arg_ptr) {
    //assert(global == 1);
+   printf(0, "WORKER THREAD WENT TO RIGHT PLACE!\r\n");
    global = 5;
    exit();
 }

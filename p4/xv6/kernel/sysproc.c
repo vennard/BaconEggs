@@ -108,59 +108,13 @@ int sys_clone(void)
   cprintf("IN SYS_CLONE: fcn = %p, arg = %d, stack = %p\r\n",fcn,0,stack); 
   int result = clone(fcn, arg, stack);
   return result;
-   //TODO call clone routine in proc.c   
-   //TODO declare in proc.h
-   /*
-  //allocate process -- finds in table and sets state to EMBRYO
-  if ((np = allocproc(1)) == 0) return -1; 
-  
-  np->kstack = stack; //save new stack address
-  sp = np->kstack + KSTACKSIZE; //sp at bottom of stack
-  sp -= sizeof(arg); //make room for arg
-  copyout(proc->pgdir, (uint)sp, arg, sizeof(arg)); //copy arg ptr to stack  
-  //leave room for trap frame
-  sp -= sizeof(*np->tf); 
-  np->tf = (struct trapframe*)sp;
-
-  //setup new context
-  sp -= 4;
-  *(uint*)sp = (uint)0xffffffff;
- 
-  sp -= sizeof(*np->context);
-  np->context = (struct context*)sp;
-  memset(np->context, 0, sizeof(*np->context));
-  np->context->eip = (uint)fcn; //set eip to next instruction to be executed
-
-  uint addr = 0xFF;
-  copyout(proc->pgdir, (uint)np->kstack, &addr, sizeof(addr)); //copy bogus return addr
-
-  //set address space equal to parents address space
-  np->pgdir = proc->pgdir;
-  
-  np->sz = proc->sz; //copy size of process mem
-  np->parent = proc; //set parent process
-  *np->tf = *proc->tf; //set trapframe for syscalls
- 
-  //clear %eax so that fork returns 0 in the child
-  np->tf->eax = 0;
- 
-  for (i = 0;i < NOFILE;i++) if (proc->ofile[i]) np->ofile[i] = filedup(proc->ofile[i]);
-
-  np->cwd = idup(proc->cwd); //copy over current directory
-  pid = np->pid;             
-  np->state = RUNNABLE;
-  safestrcpy(np->name, proc->name, sizeof(proc->name));
-*/
-  return 0;
 }
 
-//TODO
 int sys_join(void)
 {
   void *stack; //return &stack (void **)
   stack = 0;
   if (argptr(0, (void *)stack, sizeof(stack)) < 0) return -1;
-
   int result = join(&stack);
   return result;
 }
