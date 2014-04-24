@@ -126,6 +126,15 @@ int clone(void(*fcn) (void*) , void *arg, void *stack)
   cprintf("IN CLONE CALL: fcn - %p, arg - %d, stack - %p!\r\n",fcn,*(int*)arg,stack);
   int i, pid;
   struct proc *p; 
+  
+  //Error check for bad stack
+
+  uint stacksize = (proc->sz ) - (uint) stack;
+  cprintf("proc->size + PGSIZE - stack = %d\r\n",stacksize);
+  cprintf("Stack \% pgsize = %d, and stacksize / pgsize = %d!\r\n",(int)stack % PGSIZE, stacksize / PGSIZE);
+  if (((int)stack % PGSIZE != 0)||((stacksize / PGSIZE) <= 1)) {
+    return -1;
+  }
 
   if ((p = allocproc()) == 0) return -1;
 
