@@ -25,6 +25,11 @@ int main(void) {
 
    int clone_pid = clone(worker, (void*)&arg, stack);
    printf(0, "clone_pid = %d\r\n",clone_pid);
+
+   void *join_stack;
+   printf(0,"SHOULD SAVE TO &JOIN_STACK = %p\r\n",&join_stack);
+   int join_pid = join(&join_stack);
+   printf(0,"JOIN results: returned pid- %d, join_stack- %p!\r\n",join_pid,join_stack);
    sleep(10);
    //while(global != 5) ;
    printf(0, "TEST PASSED -- global=%d\n",global);

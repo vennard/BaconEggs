@@ -115,6 +115,7 @@ int sys_join(void)
   void *stack; //return &stack (void **)
   stack = 0;
   if (argptr(0, (void *)stack, sizeof(stack)) < 0) return -1;
-  int result = join(&stack);
+  cprintf("IN SYS_JOIN: stack = %p\r\n",stack);
+  int result = join(stack);
   return result;
 }

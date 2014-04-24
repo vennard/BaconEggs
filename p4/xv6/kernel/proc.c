@@ -127,14 +127,10 @@ int clone(void(*fcn) (void*) , void *arg, void *stack)
   int i, pid;
   struct proc *p; 
   
-  //Error check for bad stack
-
-  uint stacksize = (proc->sz ) - (uint) stack;
-  cprintf("proc->size + PGSIZE - stack = %d\r\n",stacksize);
-  cprintf("Stack \% pgsize = %d, and stacksize / pgsize = %d!\r\n",(int)stack % PGSIZE, stacksize / PGSIZE);
-  if (((int)stack % PGSIZE != 0)||((stacksize / PGSIZE) <= 1)) {
-    return -1;
-  }
+  //Error check for bad stack 
+  uint stacksize = (proc->sz) - (uint) stack;
+  if (((int)stack % PGSIZE != 0)||((stacksize / PGSIZE) <= 1)) return -1;
+  
 
   if ((p = allocproc()) == 0) return -1;
 
@@ -158,13 +154,14 @@ int clone(void(*fcn) (void*) , void *arg, void *stack)
   uint ustack[2];
   ustack[0] = 0xffffffff; //fake return PC 
   ustack[1] = (uint) arg; //argc i think
-  if (copyout(p->pgdir, sp, ustack, sizeof(uint)*2) < 0) return -1;
+  if (copyout(p->pgdir, sp, ustack, sizeof(ustack)) < 0) return -1;
+  //if (copyout(p->pgdir, sp, ustack, sizeof(uint)*2) < 0) return -1;
 
 
   for(i = 0;i < NOFILE; i++) if (proc->ofile[i]) p->ofile[i] = filedup(proc->ofile[i]);
   p->cwd = idup(proc->cwd);
   pid = p->pid;
-  p->thread = 1;
+  p->thread = stack;
   safestrcpy(p->name, proc->name, sizeof(proc->name));
   cprintf("\r\nRETURNING FROM CLONE PROC=%s WITH pid=%d\r\n",p->name,pid);
   cprintf("-------->going to start at tf->eip = %d, and context->eip - %d\r\n",p->tf->eip,p->context->eip);
@@ -174,7 +171,49 @@ int clone(void(*fcn) (void*) , void *arg, void *stack)
 
 int join(void **stack)
 {
-  return 0;
+
+  cprintf("Called JOIN -- \r\n");
+  cprintf("*(**stack)- %p \r\n",*stack);
+
+  struct proc *p;
+  int havekids, pid;
+
+  acquire(&ptable.lock);
+  for (;;) {
+    havekids = 0;
+    for(p = ptable.proc;p < &ptable.proc[NPROC];p++) {
+      if(p->parent != proc) continue;
+      havekids = 1;
+      //wait for child thread returns childs pid
+      if ((p->state == ZOMBIE)&&(p->thread != 0)) {
+        pid = p->pid;
+        p->state = UNUSED;
+        p->pid = 0;
+        p->parent = 0;
+        p->name[0] = 0;
+        p->killed = 0;
+        //save off childs stack
+        cprintf("Saving p->thread %p to passed stack pointer %d!\r\n",p->thread, *stack);
+        //*stack = p->thread;
+        copyout(proc->pgdir, (uint)*stack, &p->thread, sizeof(void*)); 
+        //memmove(&stack, &p->thread, sizeof(p->thread));
+
+
+        release(&ptable.lock);
+        return pid;
+      }
+    }
+    
+    //exit if there are no children
+    if (!havekids || proc->killed) {
+      release(&ptable.lock);
+      return -1;
+    }
+
+    //wait for children to exit
+    sleep(proc, &ptable.lock);
+  }
+  return -1;
 }
 // Create a new process copying p as the parent.
 // Sets up stack to return as if from system call.
@@ -272,7 +311,7 @@ wait(void)
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->parent != proc)
         continue;
-      if(p->thread == 1) continue; //TODO added to avoid waiting for threads
+      if(p->thread > 0) continue; //TODO added to avoid waiting for threads
       havekids = 1;
       if(p->state == ZOMBIE){
         // Found one.
