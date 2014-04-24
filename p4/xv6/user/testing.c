@@ -8,33 +8,34 @@
 
 int ppid;
 volatile int global = 1;
+volatile int arg = 55;
 #define PGSIZE (4096)
 
 void worker(void *arg_ptr);
 
 int main(void) {
    printf(0,"Starting user testing... ");
-
    ppid = getpid();
    void *stack = malloc(PGSIZE*2);
    printf(0,"allocated stack! ");
+
    if((uint)stack % PGSIZE)
      stack = stack + (4096 - (uint)stack % PGSIZE);
-   printf(0,"page aligned request... now calling clone\r\n ");
-   printf(0,"fcn = %p, 0, stack = %p!!!\r\n",worker,stack);
-   int clone_pid = clone(worker, 0, stack);
+   printf(0,"Calling clone with fcn = %p, 0, stack = %p!!!\r\n",worker,stack);
+
+   int clone_pid = clone(worker, (void*)&arg, stack);
    printf(0, "clone_pid = %d\r\n",clone_pid);
    sleep(10);
    //while(global != 5) ;
-   printf(0, "TEST PASSED\n");
+   printf(0, "TEST PASSED -- global=%d\n",global);
    exit();
 }
 
 void
 worker(void *arg_ptr) {
-   //assert(global == 1);
-   printf(0, "WORKER THREAD WENT TO RIGHT PLACE!\r\n");
-   global = 5;
+   int tmp = *(int*)arg_ptr;
+   printf(0,"WORKER THREAD: ARG=%d (from pointer %p)!\r\n",tmp,arg_ptr);
+   global = tmp;
    exit();
 }
 

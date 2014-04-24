@@ -105,7 +105,7 @@ int sys_clone(void)
   if (argptr(0, (char**)&fcn, sizeof(fcn)) < 0) return -1; 
   if (argptr(1, (char**)&arg, sizeof(arg)) < 0) return -1; 
   if (argptr(2, (char**)&stack, sizeof(stack)) < 0) return -1; 
-  cprintf("IN SYS_CLONE: fcn = %p, arg = %d, stack = %p\r\n",fcn,0,stack); 
+  cprintf("IN SYS_CLONE: fcn = %p, arg = %d, stack = %p\r\n",fcn,*(int*)arg,stack); 
   int result = clone(fcn, arg, stack);
   return result;
 }

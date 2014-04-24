@@ -123,7 +123,7 @@ growproc(int n)
 
 int clone(void(*fcn) (void*) , void *arg, void *stack)
 {
-  cprintf("IN CLONE CALL: fcn - %p, arg - %d, stack - %p!\r\n",fcn,0,stack);
+  cprintf("IN CLONE CALL: fcn - %p, arg - %d, stack - %p!\r\n",fcn,*(int*)arg,stack);
   int i, pid;
   struct proc *p; 
 
@@ -145,14 +145,12 @@ int clone(void(*fcn) (void*) , void *arg, void *stack)
   p->tf->esp = (uint) stack;
   //p->context->eip = (uint) fcn;
 
-  cprintf("Saved eip, esp, and eip in trapframe and context... ");
+  uint sp = (uint)stack; 
+  uint ustack[2];
+  ustack[0] = 0xffffffff; //fake return PC 
+  ustack[1] = (uint) arg; //argc i think
+  if (copyout(p->pgdir, sp, ustack, sizeof(uint)*2) < 0) return -1;
 
-  //Save off return address and arg
-  uint temp = 0xffffffff;
-  memmove(stack, &temp, sizeof(uint)); //copy return address to top of stack
-  //memmove(stack + PGSIZE - sizeof(arg), &arg, sizeof(arg)); //assumes we are moving pointer to arg onto stack
-  
-  cprintf("saved *arg and return addr bottom and top of stack... ");
 
   for(i = 0;i < NOFILE; i++) if (proc->ofile[i]) p->ofile[i] = filedup(proc->ofile[i]);
   p->cwd = idup(proc->cwd);
@@ -161,7 +159,6 @@ int clone(void(*fcn) (void*) , void *arg, void *stack)
   safestrcpy(p->name, proc->name, sizeof(proc->name));
   cprintf("\r\nRETURNING FROM CLONE PROC=%s WITH pid=%d\r\n",p->name,pid);
   cprintf("-------->going to start at tf->eip = %d, and context->eip - %d\r\n",p->tf->eip,p->context->eip);
-  cprintf("WHIIIIIIIICH is just (uint) fcn = %d\r\n",(uint)fcn);
   p->state = RUNNABLE;
   return pid;  
 }
@@ -266,7 +263,7 @@ wait(void)
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if(p->parent != proc)
         continue;
-      //if(p->thread == 1) continue; //TODO added to avoid waiting for threads
+      if(p->thread == 1) continue; //TODO added to avoid waiting for threads
       havekids = 1;
       if(p->state == ZOMBIE){
         // Found one.
