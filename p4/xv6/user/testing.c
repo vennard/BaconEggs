@@ -16,8 +16,9 @@ void worker(void *arg_ptr);
 int main(void) {
    printf(0,"Starting user testing... ");
    ppid = getpid();
-   void *stack = malloc(PGSIZE*2);
+   //void *stack = malloc(PGSIZE*2);
    printf(0,"allocated stack! ");
+/*
 
    if((uint)stack % PGSIZE)
      stack = stack + (4096 - (uint)stack % PGSIZE);
@@ -30,9 +31,22 @@ int main(void) {
    printf(0,"SHOULD SAVE TO &JOIN_STACK = %p\r\n",&join_stack);
    int join_pid = join(&join_stack);
    printf(0,"JOIN results: returned pid- %d, join_stack- %p!\r\n",join_pid,join_stack);
+*/
+   int i;
+   for (i = 0; i < 2;i++) {
+   printf(0,"\r\nLOOP: %d!!!\r\n",i);
+   int thread_pid = thread_create(worker,0);
+   printf(0,"Created THREADS PID = %d\r\n",thread_pid);
+   int join_pid = thread_join();
+   printf(0,"join resulted in join_pid=%d\r\n",join_pid);
    sleep(10);
    //while(global != 5) ;
-   printf(0, "TEST PASSED -- global=%d\n",global);
+   if (thread_pid != join_pid) {
+      printf(0, "TEST FAILED \r\n");
+   } else {
+      printf(0, "TEST PASSED \r\n");
+   } 
+    } 
    exit();
 }
 

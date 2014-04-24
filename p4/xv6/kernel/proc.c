@@ -183,6 +183,7 @@ int join(void **stack)
     havekids = 0;
     for(p = ptable.proc;p < &ptable.proc[NPROC];p++) {
       if(p->parent != proc) continue;
+      if(p->thread == 0) continue; //we do not handle forks here
       havekids = 1;
       //wait for child thread returns childs pid
       if ((p->state == ZOMBIE)&&(p->thread != 0)) {
@@ -194,11 +195,7 @@ int join(void **stack)
         p->killed = 0;
         //save off childs stack
         cprintf("Saving p->thread %p to passed stack pointer %d!\r\n",p->thread, *stack);
-        //*stack = p->thread;
         copyout(proc->pgdir, (uint)*stack, &p->thread, sizeof(void*)); 
-        //memmove(&stack, &p->thread, sizeof(p->thread));
-
-
         release(&ptable.lock);
         return pid;
       }

@@ -8,18 +8,15 @@
  */
 
 lock_t lock;
+void *stack;
 
 int thread_create(void (*start_routine) (void *), void *arg) {
-   void *stack;
   //call malloc to create a new user stack
-  stack = malloc(sizeof(4096)); //PGSIZE = 4096
+  stack = malloc(4096*2); //PGSIZE = 4096
+  printf(0, "IN THREAD_CREATE: malloc'd\r\n");
   int result = clone(start_routine, arg, stack);
-  
-  if (result == 0) { // process is now parent thread 
-      printf(0,"This is parent thread\r\n");
-  } else { //process is child thread
-      printf(0,"This is child thread\r\n");
-  }
+  printf(0, "IN THREAD_CREATE: result of clone = %d\r\n",result);
+  printf(0,"THREAD_CREATE: stack = %p\r\n",stack);
   return result;
 }
 
@@ -27,6 +24,7 @@ int thread_join() {
   void *childstack;
   int result = join(&childstack);
   free(childstack); 
+  printf(0,"THREAD_JOIN: stack = %p, and returned pid = %d\r\n",childstack,result);
   return result;
 }
 
