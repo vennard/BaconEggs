@@ -23,10 +23,10 @@ void receiving() {
             if ((buffer[BUFFER_SIZE-3] == messagecount)&&(buffer[BUFFER_SIZE-2] == 'k')&&(buffer[BUFFER_SIZE-1] == 'z'))  {
                 messagecount++;
                 //idempotency -- only process messages once - always ack
-                printf("SERVER processing unique message: 1-'%c' 2-'%c' with %d bytes\r\n",buffer[1],buffer[2],rc);
+                printf("SERVER processing unique message: %s  with correct key '%c' '%c' with %d bytes\r\n",buffer,buffer[BUFFER_SIZE-2],buffer[BUFFER_SIZE-1],rc);
             }
 	        char reply[BUFFER_SIZE];
-            reply[0] = buffer[0]; //send ack number back with special code
+            reply[0] = buffer[BUFFER_SIZE-3]; //send ack number back with special code
             reply[1] = 'a';
             reply[2] = 'c';
             reply[3] = 'k';

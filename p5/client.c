@@ -80,6 +80,8 @@ int main(int argc, char *argv[]) {
     char sendingthis[BUFFER_SIZE];
     sprintf(sendingthis, "well i guess this does work -- suspiciously slow though");
     transmit(sendingthis);
+    //If you send a request that wants data back it will be put into buffer after transmission
+    //remember I use the last 3 bytes so those will be unuseable
     return 0;
 }
 
