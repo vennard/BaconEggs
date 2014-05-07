@@ -132,6 +132,7 @@ void initializefs() {
 
 int main(int argc, char *argv[]) {
    //check and save off input args
+   /*
    receiving(); //TODO testing!!!
    if (argc != 3) {
       printf("Incorrect command line arguments: needs server [portnum] [filesystem] \r\n");
@@ -143,7 +144,7 @@ int main(int argc, char *argv[]) {
    //try and open filesystem -- if it doesn't exist create a new one
    fd = open(filesystem, O_RDWR);
    if (fd < 0) initializefs();
-   
+  */ 
 
 //SUPPLIED CODE BELOW
     int sd = UDP_Open(10001);
@@ -152,9 +153,11 @@ int main(int argc, char *argv[]) {
     printf("                                SERVER:: waiting in loop\n");
 
     while (1) {
+   printf("does it actually loop");
 	struct sockaddr_in s;
 	char buffer[BUFFER_SIZE];
 	int rc = UDP_Read(sd, &s, buffer, BUFFER_SIZE);
+   printf("or here loop");
 	if (rc > 0) {
 	    printf("                                SERVER:: read %d bytes (message: '%s')\n", rc, buffer);
 	    char reply[BUFFER_SIZE];
@@ -167,8 +170,8 @@ int main(int argc, char *argv[]) {
 //SUPPLIED CODE ABOVE
 
 //close the filesystem
-fsync(fd);
-close(fd);
+//fsync(fd);
+//close(fd);
 }
 
 

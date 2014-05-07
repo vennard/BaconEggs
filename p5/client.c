@@ -4,12 +4,15 @@
 #include "udp.h"
 
 #define BUFFER_SIZE (4096)
-#define TIMEOUT 5
+#define TIMEOUT (5)
 
 char buffer[BUFFER_SIZE];
 struct sockaddr_in saddr;
 int sd, rc;
 int messageid;
+short int sock = -1;
+fd_set fdset;
+struct timeval tv;
 
 //sets up socket
 void setupconnection() {
@@ -18,6 +21,8 @@ void setupconnection() {
     rc = UDP_FillSockAddr(&saddr, "best-mumble.cs.wisc.edu", 10001);
     assert(rc == 0);
     messageid = 0; 
+    //set to non-blocking 
+    fcntl(sd, F_SETFL, O_NONBLOCK);
 }
 
 //reads packet from socket 
@@ -73,11 +78,11 @@ int transmit() {
 
 int main(int argc, char *argv[]) {
     setupconnection();
+    transmit();
     char message[BUFFER_SIZE];
     sprintf(message, "hello world");
     sendpacket(message);
     receive();
-    transmit();
     /*
     printf("CLIENT:: about to send message (%d)\n", rc);
     char message[BUFFER_SIZE];
