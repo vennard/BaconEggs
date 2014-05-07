@@ -4,7 +4,7 @@
 #include "udp.h"
 
 #define BUFFER_SIZE (4096)
-#define TIMEOUT (5)
+#define TIMEOUT (1)
 
 char buffer[BUFFER_SIZE];
 struct sockaddr_in saddr;
@@ -18,7 +18,7 @@ struct timeval tv;
 void setupconnection() {
     sd = UDP_Open(0);
     assert(sd > -1);
-    rc = UDP_FillSockAddr(&saddr, "best-mumble.cs.wisc.edu", 10001);
+    rc = UDP_FillSockAddr(&saddr, "best-mumble.cs.wisc.edu", 10021);
     assert(rc == 0);
     messageid = 0; 
     //set to non-blocking 
@@ -55,9 +55,12 @@ int transmit() {
     message[1] = 'z'; //watch for this key TODO remove
     while (!ackd) {
         tstart = time(NULL);
+        rc = UDP_FillSockAddr(&saddr, "best-mumble.cs.wisc.edu", 10021);
+        assert(rc == 0);
         sendpacket(message);
         int timeout = 0;
         while (!timeout) {
+            //setupconnection();
             int rxd = receive();
             tnow = time(NULL);
             if ((rxd == 0)&&(messageid == (int)buffer[0])&&(buffer[1] == 'a')&&(buffer[2] == 'c')&&(buffer[3] == 'k')) { //got valid ack

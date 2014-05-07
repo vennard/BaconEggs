@@ -10,7 +10,7 @@ int messagecount;
 
 //loop waiting for data to be recieved
 void receiving() {
-    int sd = UDP_Open(10001);
+    int sd = UDP_Open(10021);
     assert(sd > -1);
     printf("SERVER: About to enter receiver waiting loop!\r\n");
     messagecount = 0;
@@ -23,14 +23,14 @@ void receiving() {
             if (buffer[0] == messagecount) {
                 messagecount++;
                 //idempotency -- only process messages once - always ack
-                printf("SERVER processing unique message: '%s' with %d bytes\r\n",buffer,rc);
+                printf("SERVER processing unique message: 1-'%c' 2-'%c' with %d bytes\r\n",buffer[1],buffer[2],rc);
             }
 	        char reply[BUFFER_SIZE];
             reply[0] = buffer[0]; //send ack number back with special code
             reply[1] = 'a';
             reply[2] = 'c';
             reply[3] = 'k';
-	        rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
+	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
 	    }
     }
 }
@@ -132,8 +132,8 @@ void initializefs() {
 
 int main(int argc, char *argv[]) {
    //check and save off input args
-   /*
    receiving(); //TODO testing!!!
+   /*
    if (argc != 3) {
       printf("Incorrect command line arguments: needs server [portnum] [filesystem] \r\n");
       return 1;
