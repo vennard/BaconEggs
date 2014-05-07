@@ -6,6 +6,34 @@
 #include "udp.h"
 
 #define BUFFER_SIZE (4096)
+int messagecount;
+
+//loop waiting for data to be recieved
+void receiving() {
+    int sd = UDP_Open(10001);
+    assert(sd > -1);
+    printf("SERVER: About to enter receiver waiting loop!\r\n");
+    messagecount = 0;
+    while (1) {
+	    struct sockaddr_in s;
+	    char buffer[BUFFER_SIZE];
+	    int rc = UDP_Read(sd, &s, buffer, BUFFER_SIZE);
+	    if (rc > 0) {
+	        printf("SERVER:: read %d bytes (message: '%s')\n", rc, buffer);
+            if (buffer[0] == messagecount) {
+                messagecount++;
+                //idempotency -- only process messages once - always ack
+                printf("SERVER processing unique message: '%s' with %d bytes\r\n",buffer,rc);
+            }
+	        char reply[BUFFER_SIZE];
+            reply[0] = buffer[0]; //send ack number back with special code
+            reply[1] = 'a';
+            reply[2] = 'c';
+            reply[3] = 'k';
+	        rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
+	    }
+    }
+}
 
 //local structs
 typedef struct checkregion {
@@ -104,6 +132,7 @@ void initializefs() {
 
 int main(int argc, char *argv[]) {
    //check and save off input args
+   receiving(); //TODO testing!!!
    if (argc != 3) {
       printf("Incorrect command line arguments: needs server [portnum] [filesystem] \r\n");
       return 1;
