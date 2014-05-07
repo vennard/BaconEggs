@@ -10,9 +10,6 @@ char buffer[BUFFER_SIZE];
 struct sockaddr_in saddr;
 int sd, rc;
 int messageid;
-short int sock = -1;
-fd_set fdset;
-struct timeval tv;
 
 //sets up socket
 void setupconnection() {
@@ -21,8 +18,7 @@ void setupconnection() {
     rc = UDP_FillSockAddr(&saddr, "best-mumble.cs.wisc.edu", 10021);
     assert(rc == 0);
     messageid = 0; 
-    //set to non-blocking 
-    fcntl(sd, F_SETFL, O_NONBLOCK);
+    fcntl(sd, F_SETFL, O_NONBLOCK); //set to non-blocking
 }
 
 //reads packet from socket 
@@ -46,13 +42,14 @@ int sendpacket(char message[BUFFER_SIZE]){
 
 //Using first char byte as acknowledge
 //transmits data and waits for acknowledge
-int transmit() {
-    char message[BUFFER_SIZE];
+//CANNOT USE FULL BUFFER
+//DATA WILL BE STORED AT THE LAST 3 BYTES OF THE BUFFER
+int transmit(char message[BUFFER_SIZE]) {
     time_t tstart,tnow;
     int ackd = 0;
-    message[0] = messageid;
-    message[1] = 'k';
-    message[1] = 'z'; //watch for this key TODO remove
+    message[BUFFER_SIZE-3] = messageid;
+    message[BUFFER_SIZE-2] = 'k';
+    message[BUFFER_SIZE-1] = 'z'; //watch for this key TODO remove
     while (!ackd) {
         tstart = time(NULL);
         rc = UDP_FillSockAddr(&saddr, "best-mumble.cs.wisc.edu", 10021);
@@ -60,7 +57,6 @@ int transmit() {
         sendpacket(message);
         int timeout = 0;
         while (!timeout) {
-            //setupconnection();
             int rxd = receive();
             tnow = time(NULL);
             if ((rxd == 0)&&(messageid == (int)buffer[0])&&(buffer[1] == 'a')&&(buffer[2] == 'c')&&(buffer[3] == 'k')) { //got valid ack
@@ -81,25 +77,9 @@ int transmit() {
 
 int main(int argc, char *argv[]) {
     setupconnection();
-    transmit();
-    char message[BUFFER_SIZE];
-    sprintf(message, "hello world");
-    sendpacket(message);
-    receive();
-    /*
-    printf("CLIENT:: about to send message (%d)\n", rc);
-    char message[BUFFER_SIZE];
-    sprintf(message, "hello world");
-
-    rc = UDP_Write(sd, &saddr, message, BUFFER_SIZE);
-    printf("CLIENT:: sent message (%d)\n", rc);
-    if (rc > 0) {
-	 struct sockaddr_in raddr;
-	 int rc = UDP_Read(sd, &raddr, buffer, BUFFER_SIZE);
-	 printf("CLIENT:: read %d bytes (message: '%s')\n", rc, buffer);
-    }
-    */
-
+    char sendingthis[BUFFER_SIZE];
+    sprintf(sendingthis, "well i guess this does work -- suspiciously slow though");
+    transmit(sendingthis);
     return 0;
 }
 

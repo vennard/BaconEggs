@@ -20,7 +20,7 @@ void receiving() {
 	    int rc = UDP_Read(sd, &s, buffer, BUFFER_SIZE);
 	    if (rc > 0) {
 	        printf("SERVER:: read %d bytes (message: '%s')\n", rc, buffer);
-            if (buffer[0] == messagecount) {
+            if ((buffer[BUFFER_SIZE-3] == messagecount)&&(buffer[BUFFER_SIZE-2] == 'k')&&(buffer[BUFFER_SIZE-1] == 'z'))  {
                 messagecount++;
                 //idempotency -- only process messages once - always ack
                 printf("SERVER processing unique message: 1-'%c' 2-'%c' with %d bytes\r\n",buffer[1],buffer[2],rc);
