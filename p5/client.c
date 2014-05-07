@@ -5,6 +5,7 @@
 char buffer[BUFFER_SIZE];
 struct sockaddr_in saddr;
 int sd, rc;
+int messageid;
 
 //sets up socket
 void setupconnection() {
@@ -12,6 +13,7 @@ void setupconnection() {
     assert(sd > -1);
     rc = UDP_FillSockAddr(&saddr, "best-mumble.cs.wisc.edu", 10001);
     assert(rc == 0);
+    
 }
 
 //reads packet from socket 
@@ -35,6 +37,7 @@ int sendpacket(char message[BUFFER_SIZE]){
 //Using first char byte as acknowledge
 //transmits data and waits for acknowledge
 int transmit() {
+    
     return 0;
 }
 
