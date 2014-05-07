@@ -130,6 +130,7 @@ void initializefs() {
 
 int main(int argc, char *argv[]) {
    receiving();
+
    //check and save off input args
    if (argc != 3) {
       printf("Incorrect command line arguments: needs server [portnum] [filesystem] \r\n");
