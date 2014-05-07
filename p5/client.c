@@ -4,7 +4,7 @@
 #include "udp.h"
 
 #define BUFFER_SIZE (4096)
-#define TIMEOUT (1)
+#define TIMEOUT (5)
 
 char buffer[BUFFER_SIZE];
 struct sockaddr_in saddr;
@@ -79,6 +79,8 @@ int main(int argc, char *argv[]) {
     setupconnection();
     char sendingthis[BUFFER_SIZE];
     sprintf(sendingthis, "well i guess this does work -- suspiciously slow though");
+    transmit(sendingthis);
+    sprintf(sendingthis, "trying to send something else !!!");
     transmit(sendingthis);
     //If you send a request that wants data back it will be put into buffer after transmission
     //remember I use the last 3 bytes so those will be unuseable
