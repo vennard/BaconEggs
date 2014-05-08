@@ -47,7 +47,7 @@ typedef struct imap {
 
 typedef struct inode {
    int size; //number of the last byte in the file?
-   char type; //0 - file, 1 - directory
+   char type; //1 - file, 0 - directory
    int data_ptr[14]; //14 direct pointers to data blocks
    //if directory data blocks contain name and inode pairs
    //name is fixed length size 60 bytes
@@ -59,11 +59,6 @@ typedef struct inode {
 typedef struct datablock {
    char data[64];
 } datablock;
-
-typedef struct direntry {
-   char name[60];
-   int inum;
-} direntry;
 
 //local variables
 int portnum;
