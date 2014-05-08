@@ -1,0 +1,56 @@
+CS537 P5
+Zach Waltz and John Vennard
+
+
+Summary of filesystem usage:
+
+Checkpoint Region (CR)
+   -pointer to end of log
+   -inodes[256] (contains pointers to each section of the inode map, each containing 16 entries for a total of 4096)
+
+inode map [16 entries each]
+   -TODO finish 
+
+NOTE: ALL STRINGS ARE NULL TERMINATED \n
+
+
+SERVER ACK:
+   first 4 bytes;
+   [4096 bytes of data] : [4096 - k] : [4097 - messageid] : [4098 - X] : [4099->4102 - 'a' 'c' 'k' 'd'] : XXXX
+
+MESSAGE TRANSFER:
+
+[4096 bytes for DATA] [4096 - 'k' key byte] [4097 - messageid] [4098 - command byte] [4099->4102 - command data 1] [4103->4106 command data 2]
+
+MFS_Init:
+   CLIENT - XXX : k : messageid : 0 : X : X
+   SERVER - ack back is sufficient
+
+MFS_Lookup:
+   CLIENT - name : k : messageid : 1 : pinum : XXX
+   SERVER - XXXX : k : messageid : 1 : ackd : inode number of file / -1 on failure
+
+MFS_Stat:
+   CLIENT - XXX : k : messageid : 2 : inum : X 
+   SERVER - MFS_Stat_t (8 bytes) : k : messageid : 2 : ackd : success/failure (0/-1)
+
+MFS_Write:
+   CLIENT - buffer data : k : messageid : 3 : inum : block
+   SERVER - XXX : k : messageid : 3 : ackd : success/failure (0/-1)
+
+MFS_Read:
+   CLIENT - XXX : k : messageid : 4 : inum : block
+   SERVER - buffer with data/MFS_DirEnt_t if requested : d : messageid : 4 : ackd : success/failure
+
+MFS_Creat:
+   CLIENT - name of file/dir : k : messageid : 5 : pinum : type
+   SERVER - XXX : k : messageid : 5 : ackd : success/failure
+
+MFS_Unlink:
+   CLIENT - name of file/dir : k : messageid : 6 : pinum : XXX 
+   SERVER - XXX : k : messageid : 6 : ackd : success/failure
+
+MFS_Shutdown:
+   CLIENT - XXX : k : messageid : 7 : X : X
+   SERVER - XXX : k : messageid : 7 : ackd : success/failure
+
