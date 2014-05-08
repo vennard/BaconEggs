@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include "udp.h"
+#include "mfs.h"
 
 #define BUFFER_SIZE (4096)
 int messagecount;
@@ -47,7 +48,7 @@ typedef struct imap {
 
 typedef struct inode {
    int size; //number of the last byte in the file?
-   char type; //1 - file, 0 - directory
+   int type; //1 - file, 0 - directory
    int data_ptr[14]; //14 direct pointers to data blocks
    //if directory data blocks contain name and inode pairs
    //name is fixed length size 60 bytes
@@ -93,22 +94,22 @@ void initializefs() {
    //create first inode (root directory)
    eol += sizeof(im);
    inode root;
-   root.type = 1; 
+   root.type = 0; 
    root.size = 2;
    root.data_ptr[0] = eol + sizeof(root);
-   root.data_ptr[1] = eol + sizeof(root) + sizeof(direntry);
+   root.data_ptr[1] = eol + sizeof(root) + sizeof(MFS_DirEnt_t);
    lseek(fd, eol, SEEK_SET);
    write(fd, &root, sizeof(root));
 
    //create single root directory and populate (with . and ..)
-   direntry dr1;
+   MFS_DirEnt_t dr1;
    dr1.name[0] = '.';
-   dr1.inum = eol; //roots inode location 
+   dr1.inum = 0; //roots inode number
    eol += sizeof(root);
    lseek(fd, eol, SEEK_SET);
    write(fd, &dr1, sizeof(dr1));
 
-   direntry dr2;
+   MFS_DirEnt_t dr2;
    eol += sizeof(dr1);
    dr2.name[0] = '.';
    dr2.name[1] = '.';
@@ -124,7 +125,7 @@ void initializefs() {
 }
 
 int main(int argc, char *argv[]) {
-   receiving();
+   //receiving();
 
    //check and save off input args
    if (argc != 3) {
