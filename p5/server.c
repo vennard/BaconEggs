@@ -70,6 +70,7 @@ int numinodes;
 
 //Creates new fs if one does not already exist
 void initializefs() {
+   int i;
    printf("Invalid file system specified... creating new filesystem!\r\n");
    //create new filesystem
    fd = open(filesystem, O_RDWR | O_CREAT);
@@ -87,6 +88,7 @@ void initializefs() {
    //initialize inode map
    eol = sizeof(cr);
    imap im;
+   for(i = 0;i < 256;i++) im.inode_ptr[i] = 0;
    im.inode_ptr[0] = eol + sizeof(im);
    numinodes = 1;
    lseek(fd, eol, SEEK_SET);
@@ -96,10 +98,13 @@ void initializefs() {
    //create first inode (root directory)
    eol += sizeof(im);
    inode root;
-   root.size = eol + sizeof(root);
+   for(i = 0;i < 14;i++) root.data_ptr[i] = 0;
+   root.size = 4096;
+   //root.size = eol + sizeof(root);
    root.type = 0; 
    root.data_ptr[0] = eol + sizeof(root);
    root.data_ptr[1] = eol + sizeof(root) + sizeof(MFS_DirEnt_t);
+printf("inode pointers 0: %i and 1: %i!\r\n",root.data_ptr[0],root.data_ptr[1]);
    
    lseek(fd, eol, SEEK_SET);
    write(fd, &root, sizeof(root));
@@ -107,21 +112,20 @@ void initializefs() {
 
    //create single root directory and populate (with . and ..)
    MFS_DirEnt_t dr1;
-   dr1.name[0] = '.';
+   sprintf(dr1.name,".");
    dr1.inum = 0; //roots inode number
    eol += sizeof(root);
    lseek(fd, eol, SEEK_SET);
    write(fd, &dr1, sizeof(dr1));
-   printf("Eol for dr1: %i!\r\n",eol);
+   printf("Eol for dr1: %i (Entry %s with num %i)!\r\n",eol,dr1.name,dr1.inum);
 
    MFS_DirEnt_t dr2;
    eol += sizeof(dr1);
-   dr2.name[0] = '.';
-   dr2.name[1] = '.';
+   sprintf(dr2.name,"..");
    dr2.inum = dr1.inum; //can't go past this
    lseek(fd, eol, SEEK_SET);
    write(fd, &dr2, sizeof(dr2));
-   printf("Eol for dr2: %i!\r\n",eol);
+   printf("Eol for dr2: %i (Entry %s with num %i)!\r\n",eol,dr2.name,dr2.inum);
 
    eol += sizeof(dr2);
    cr.eol = eol;
@@ -129,6 +133,8 @@ void initializefs() {
    write(fd, &cr, sizeof(cr)); 
    printf("done writing everything out");   
    printf("final eol: %i!\r\n",eol);
+
+   fsync(fd);
 }
 
 int main(int argc, char *argv[]) {
@@ -147,9 +153,6 @@ int main(int argc, char *argv[]) {
    if (fd < 0) initializefs();
 
 
-
-
-   fsync(fd); //TODO needed to push data out to disk
    close(fd);
    return 0;
 }
