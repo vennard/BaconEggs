@@ -82,7 +82,6 @@ void initializefs() {
    cr.imap_ptr[0] = sizeof(cr);
    cr.eol = sizeof(cr);
    write(fd, &cr, sizeof(cr));
-   
    printf("Eol for CR: %i!\r\n",eol);
 
    //initialize inode map
@@ -97,10 +96,11 @@ void initializefs() {
    //create first inode (root directory)
    eol += sizeof(im);
    inode root;
-   root.size = 128;
+   root.size = eol + sizeof(root);
    root.type = 0; 
    root.data_ptr[0] = eol + sizeof(root);
    root.data_ptr[1] = eol + sizeof(root) + sizeof(MFS_DirEnt_t);
+   
    lseek(fd, eol, SEEK_SET);
    write(fd, &root, sizeof(root));
    printf("Eol for inode: %i!\r\n",eol);
