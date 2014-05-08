@@ -83,6 +83,8 @@ void initializefs() {
    cr.eol = sizeof(cr);
    write(fd, &cr, sizeof(cr));
    
+   printf("Eol for CR: %i!\r\n",eol);
+
    //initialize inode map
    eol = sizeof(cr);
    imap im;
@@ -90,16 +92,18 @@ void initializefs() {
    numinodes = 1;
    lseek(fd, eol, SEEK_SET);
    write(fd, &im, sizeof(im));
+   printf("Eol for imap: %i!\r\n",eol);
 
    //create first inode (root directory)
    eol += sizeof(im);
    inode root;
+   root.size = 128;
    root.type = 0; 
-   root.size = 2;
    root.data_ptr[0] = eol + sizeof(root);
    root.data_ptr[1] = eol + sizeof(root) + sizeof(MFS_DirEnt_t);
    lseek(fd, eol, SEEK_SET);
    write(fd, &root, sizeof(root));
+   printf("Eol for inode: %i!\r\n",eol);
 
    //create single root directory and populate (with . and ..)
    MFS_DirEnt_t dr1;
@@ -108,6 +112,7 @@ void initializefs() {
    eol += sizeof(root);
    lseek(fd, eol, SEEK_SET);
    write(fd, &dr1, sizeof(dr1));
+   printf("Eol for dr1: %i!\r\n",eol);
 
    MFS_DirEnt_t dr2;
    eol += sizeof(dr1);
@@ -116,12 +121,14 @@ void initializefs() {
    dr2.inum = dr1.inum; //can't go past this
    lseek(fd, eol, SEEK_SET);
    write(fd, &dr2, sizeof(dr2));
+   printf("Eol for dr2: %i!\r\n",eol);
 
    eol += sizeof(dr2);
    cr.eol = eol;
    lseek(fd, 0, SEEK_SET); 
    write(fd, &cr, sizeof(cr)); 
    printf("done writing everything out");   
+   printf("final eol: %i!\r\n",eol);
 }
 
 int main(int argc, char *argv[]) {
