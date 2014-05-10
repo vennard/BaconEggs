@@ -13,12 +13,12 @@
 #define COMMAND_BYTE (BUFFERSIZE-9)
 #define DATA_BLOCK (0)
 #define KEY_BYTE (BUFFERSIZE-11)
-#define MESSAGE_ID (BUFFERSIZE-10) //1 byte
+#define MESSAGE_ID (BUFFERSIZE-10) //1 byteb
 #define CMD_INT1 (BUFFERSIZE-8)
 #define CMD_INT2 (BUFFERSIZE-4)
 #define TIMEOUT (3)
 
-char buffer[BUFFERSIZE];
+char message[BUFFERSIZE];
 char response[BUFFERSIZE];
 struct sockaddr_in saddr;
 struct sockaddr_in raddr;
@@ -37,29 +37,24 @@ int MFS_Init(char *hostname, int port)
     assert (hostname != NULL);
 
     //SET UP SOCKET
-    sd = UDP_Open(port);
+    sd = UDP_Open(0);
     assert(sd > -1);
     rc = UDP_FillSockAddr(&saddr, hostname, port);
     assert (rc == 0);
     fcntl(sd, F_SETFL, O_NONBLOCK); //set to non-blocking
 
     //SET UP PACKET
-    sprintf(buffer, "This is a test.");
-    //buffer[DATA_BLOCK] = "This is a test.\n";
-    buffer[KEY_BYTE]     = 'k';
-    buffer[COMMAND_BYTE] = 0;
-    buffer[MESSAGE_ID]   = messageid;
-    messageid = (messageid + 1) % 255; //update, only 1 byte large
+    sprintf(message, "This is a test.");
+    //message[DATA_BLOCK] = "This is a test.\n";
+    message[KEY_BYTE]     = 'k';
+    message[COMMAND_BYTE] = 0;
+    message[MESSAGE_ID]   = messageid;
 
     //SEND PACKET
     transmit();
 
     //VERIFY PACKET CONTENTS
-    if (response[CMD_INT2] < 0)
-    {        
-        printf("ERROR: MFS_Init received failing packet.");        
-        return -1;
-    }
+    
     return 0;
 }
 
@@ -69,13 +64,50 @@ int MFS_Lookup(int pinum, char *name)
     //find entry name
     //return inode of name
     //else return -1 (invalid pinum, name does not exist in pinum)
-    return 0;
+
+    //SET UP PACKET
+    sprintf(message, name);
+    message[KEY_BYTE]     = 'k';
+    message[COMMAND_BYTE] = 1;
+    message[MESSAGE_ID]   = messageid;
+    message[CMD_INT1] = pinum;
+
+    //SEND PACKET
+    transmit();
+
+    //VERIFY PACKET CONTENTS
+    if (response[CMD_INT2] < 0)
+    {        
+        printf("ERROR: MFS_Lookup received failing packet.");        
+        return -1;
+    }
+    return response[CMD_INT2];
 }
 
 int MFS_Stat(int inum, MFS_Stat_t *m)
 {
     //return stat info about file inum
     //return 0, else return -1 if inum doesn't exist
+
+    //SET UP PACKET
+    //sprintf(message, name);
+    message[KEY_BYTE]     = 'k';
+    message[COMMAND_BYTE] = 2;
+    message[MESSAGE_ID]   = messageid;
+    message[CMD_INT1] = inum;
+
+    //SEND PACKET
+    transmit();
+
+    //VERIFY PACKET CONTENTS
+    if (response[CMD_INT2] < 0)
+    {        
+        printf("ERROR: MFS_Stat received failing packet.");        
+        return -1;
+    }
+    m->type = response[DATA_BLOCK];
+    m->size = response[DATA_BLOCK+4];
+
     return 0;
 }
 
@@ -84,6 +116,32 @@ int MFS_Write(int inum, char *buffer, int block)
     //write 4K block offset specified by block
     //return 0 on success, -1 on failure
     //invalid inum, invalid block, not a regular file
+
+    //CRUDE CHECKS
+    if (inum < 0 || block < 0 || buffer == NULL)
+    {
+        printf("ERROR: MFS_Write received invalid parameters.\n");
+        return -1;
+    }
+   
+    //SET UP PACKET
+    sprintf(message, buffer);
+    message[KEY_BYTE]     = 'k';
+    message[COMMAND_BYTE] = 3;
+    message[MESSAGE_ID]   = messageid;
+    message[CMD_INT1] = inum;
+    message[CMD_INT2] = block;
+
+    //SEND PACKET
+    transmit();
+
+    //VERIFY PACKET CONTENTS
+    if (response[CMD_INT2] < 0)
+    {        
+        printf("ERROR: MFS_Write received failing packet.");        
+        return -1;
+    }
+
     return 0;
 }
 
@@ -94,6 +152,34 @@ int MFS_Read(int inum, char *buffer, int block)
     //directories return data in format of MFS_DirEnt_t
     //return 0 on success, -1 on failure
     //invalid inum, invalid block
+    
+    //CRUDE CHECKS
+    if (inum < 0 || block < 0 || buffer == NULL)
+    {
+        printf("ERROR: MFS_Read received invalid parameters.\n");
+        return -1;
+    }
+   
+    //SET UP PACKET
+    //sprintf(message, buffer);
+    message[KEY_BYTE]     = 'k';
+    message[COMMAND_BYTE] = 4;
+    message[MESSAGE_ID]   = messageid;
+    message[CMD_INT1] = inum;
+    message[CMD_INT2] = block;
+
+    //SEND PACKET
+    transmit();
+
+    //VERIFY PACKET CONTENTS
+    if (response[CMD_INT2] < 0)
+    {        
+        printf("ERROR: MFS_Read received failing packet.");        
+        return -1;
+    }
+
+    //*buffer = 
+
     return 0;
 }
 
@@ -153,7 +239,7 @@ int transmit() //send buffer[], receive response[]
             }
         }//while !timeout
     }//while !ackd
-    messageid++;
+    messageid = (messageid + 1) % 255; //update, only 1 byte large
     return 0;
 }
 
@@ -174,7 +260,7 @@ int receive()
 int sendpacket()
 {
     printf("Client : Sending message..\n");
-    rc = UDP_Write(sd, &saddr, buffer, BUFFERSIZE);
+    rc = UDP_Write(sd, &saddr, message, BUFFERSIZE);
     assert(rc > -1);
     printf("Client : Sent message..\n");
     return 0;
@@ -183,8 +269,8 @@ int sendpacket()
 //CHECKS THAT RESPONSE IS VALID FOR THE SENT BUFFER
 int verify()
 {
-    if(buffer[COMMAND_BYTE] == response[COMMAND_BYTE] && buffer[MESSAGE_ID] == response[MESSAGE_ID] 
-       && buffer[KEY_BYTE] == response[KEY_BYTE] && response[CMD_INT1] == 'a' && response[CMD_INT1+1] == 'c'
+    if(message[COMMAND_BYTE] == response[COMMAND_BYTE] && message[MESSAGE_ID] == response[MESSAGE_ID] 
+       && message[KEY_BYTE] == response[KEY_BYTE] && response[CMD_INT1] == 'a' && response[CMD_INT1+1] == 'c'
        && response[CMD_INT1+2] == 'k' && response[CMD_INT1+3] == 'd')
         return 0;
     else return -1;

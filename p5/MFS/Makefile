@@ -7,7 +7,7 @@ HEADERS = mfs.h udp.h
 
 all: mfs.o libmfs.so myprog
 
-mfs.o: mfs.c $(HEADER)
+mfs.o: mfs.c $(HEADERS)
 	gcc $(FLAGS_L) mfs.c $(FLAG_SHOW_ERROR)
 
 libmfs.so: mfs.o
