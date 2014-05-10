@@ -45,11 +45,17 @@ typedef struct direntry {
 } direntry;
 extern direntry direntry_t;
 
+//server global vars
+extern char rbuf[4096];
+
 //server utility functions
 void startfs(char* filesystem);
-int findentry(int imap, int inode);
+int writeblock(int loc, char *buf, int size);
+char* readblock(int loc, int size);
 int getentry(int ptr);
 int getinode(int inum);
+void seteol(int eol);
+int geteol(void);
 
 #endif // __MFS_h__
 
