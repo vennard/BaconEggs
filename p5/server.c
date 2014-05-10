@@ -10,6 +10,14 @@
 #define BUFFER_SIZE (4096)
 int messagecount;
 char buffer[BUFFER_SIZE];
+int MFS_Lookup_h(int pinum, char *name);
+int MFS_Init_h(char *hostname, int port);
+int MFS_Stat_h(int inum, MFS_Stat_t *m);
+int MFS_Write_h(int inum, char *buffer, int block);
+int MFS_Read_h(int inum, char *buffer, int block);
+int MFS_Creat_h(int pinum, int type, char *name);
+int MFS_Unlink_h(int pinum, char *name);
+int MFS_Shutdown_h();
 
 //loop waiting for data to be recieved
 void receiving() {
@@ -58,7 +66,7 @@ int main(int argc, char *argv[]) {
    if (fd < 0) startfs(filesystem);
 
    printf("Starting testing...\r\n");
-   MFS_Lookup(0, "..");
+   MFS_Lookup_h(0, "..");
 
    close(fd);
    return 0;
@@ -66,7 +74,7 @@ int main(int argc, char *argv[]) {
 
 //Finds the entry matching name in the parent directory pinum
 //returns inode number of name
-int MFS_Lookup(int pinum, char *name) {
+int MFS_Lookup_h(int pinum, char *name) {
     printf("Called MFS_Lookup with pinum %i and name %s !\r\n",pinum,name);
     getinode(pinum);
     printf("Found inode of size %i and type %i and ptr[0] - %i\r\n",inode_t.size,inode_t.type,inode_t.data_ptrs[0]);
@@ -91,5 +99,7 @@ int MFS_Lookup(int pinum, char *name) {
     printf("failed to find a match! returning -1\r\n");
     return -1;
 }
+
+
 
 
