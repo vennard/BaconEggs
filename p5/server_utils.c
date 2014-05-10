@@ -9,6 +9,8 @@
 int fd;
 int eol;
 static inode *iptr;
+inode inode_t;
+direntry direntry_t;
 
 void startfs(char* filesystem) {
    int i;
@@ -114,13 +116,14 @@ int findentry(int imap, int inode) {
 }
 
 //returns inode struct of inode with inum
-inode* getinode(int inum) {
+int getinode(int inum) {
     printf("Called getinode!\r\n");
     iptr = NULL;
     int imap = inum / 16;
     int inode = inum % 16;
     int temp;
-    int sz;
+    int sz = -1;
+    int type = -1;
     printf("Grabbing imap %i and inode %i\r\n",imap,inode);
     lseek(fd, imap + 4, SEEK_SET);
     read(fd, &temp, 4);
@@ -130,23 +133,29 @@ inode* getinode(int inum) {
     printf("Read pointer: %i\r\n",temp);
     lseek(fd, temp, SEEK_SET);
     read(fd, &sz, 4);
-    printf("Read inode size: %i ",sz);
-    lseek(fd, temp + inode + 4, SEEK_SET);
-    read(fd, &iptr->type, 4);
-    lseek(fd, temp + inode + 8, SEEK_SET);
-    read(fd, iptr->data_ptrs, 56);
-    return iptr;
+    //iptr->size = sz;
+    printf("Read inode size: %i\r\n ",sz);
+    lseek(fd, temp + 4, SEEK_SET);
+    read(fd, &type, 4);
+    printf("Read inode type: %i\r\n ",type);
+    lseek(fd, temp + 8, SEEK_SET);
+    int td[14];
+    read(fd, td, 56);
+    inode_t.size = sz;
+    inode_t.type = type;
+    int i;
+    for (i = 0;i < 14;i++) inode_t.data_ptrs[i] = td[i];
+    return 0;
 }
 
 //loads a directory entry from ptr address
-direntry* getentry(int ptr) {
+int getentry(int ptr) {
     printf("Called getentry!\r\n");
-    direntry *p = NULL;
     lseek(fd, ptr, SEEK_SET);
-    read(fd, &p->name, 60);
+    read(fd, &direntry_t.name, 60);
     lseek(fd, ptr+60, SEEK_SET);
-    read(fd, &p->inum, 4);
-    return p;
+    read(fd, &direntry_t.inum, 4);
+    return 0;
 }
 
 

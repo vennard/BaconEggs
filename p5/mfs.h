@@ -37,17 +37,19 @@ typedef struct inode {
     int type;
     int data_ptrs[14];
 } inode;
+extern inode inode_t;
 
 typedef struct direntry {
     char name[60];
     int inum;
 } direntry;
+extern direntry direntry_t;
 
 //server utility functions
 void startfs(char* filesystem);
 int findentry(int imap, int inode);
-direntry* getentry(int ptr);
-inode* getinode(int inum);
+int getentry(int ptr);
+int getinode(int inum);
 
 #endif // __MFS_h__
 

@@ -68,22 +68,25 @@ int main(int argc, char *argv[]) {
 //returns inode number of name
 int MFS_Lookup(int pinum, char *name) {
     printf("Called MFS_Lookup with pinum %i and name %s !\r\n",pinum,name);
-    inode *dir = getinode(pinum);
-    printf("Found inode of size %i and type %i\r\n",dir->size,dir->type);
+    getinode(pinum);
+    printf("Found inode of size %i and type %i and ptr[0] - %i\r\n",inode_t.size,inode_t.type,inode_t.data_ptrs[0]);
     int i = 0;
-    int ptr = dir->data_ptrs[0];
-    while(dir->data_ptrs[i] != 0) { //search directory blocks
-        direntry *dp = getentry(ptr);
+    int ptr = inode_t.data_ptrs[0];
+    while(inode_t.data_ptrs[i] != 0) { //search directory blocks
+        getentry(ptr);
+        direntry *dp = &direntry_t; 
         while (dp->inum != -1) {
+        printf("Got entry name - %s and inum - %i\r\n",dp->name,dp->inum);
             if (strcmp(dp->name,name) == 0) {
-                printf("Found a match! Returning inum of match: %i\r\n",dp->inum);
+                printf("Found a match! Returning inum of match: %i \r\n",dp->inum);
                 return dp->inum;
             }
             ptr += 64;
-            dp = getentry(ptr);
+            getentry(ptr);
+            dp = &direntry_t;
         }
         i++;
-        ptr = dir->data_ptrs[i];
+        ptr = inode_t.data_ptrs[i];
     }
     printf("failed to find a match! returning -1\r\n");
     return -1;
