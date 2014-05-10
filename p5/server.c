@@ -36,36 +36,69 @@ void receiving() {
     }
 }
 
-//local structs
-typedef struct checkregion {
-   int eol;
-   int imap_ptr[256];
-} checkregion;
-
-typedef struct imap {
-   int inode_ptr[16];
-} imap;
-
-typedef struct inode {
-   MFS_Stat_t stat;
-   //int size;
-   //int type;
-   int data_ptr[14]; //14 direct pointers to data blocks
-   //if directory data blocks contain name and inode pairs
-   //name is fixed length size 60 bytes
-   //inode number is just 4 bytes
-} inode;
-
-typedef struct datablock {
-   char data[64];
-} datablock;
-
 //local variables
 int portnum;
 char *filesystem;
 int fd;
 int eol; //current location in file by byte offset
 int numinodes;
+
+void startfs() {
+    printf("Creating new filesystem... ");
+    int i;
+
+   fd = open(filesystem, O_RDWR | O_CREAT);
+   if (fd < 0) printf("Failed to create new filesystem!\r\n");
+
+   //write check region imap ptrs 
+   int imap_ptrs[256];
+   imap_ptrs[0] = 1028;
+   for (i = 1;i < 256;i++) imap_ptrs[i] = 0;
+   lseek(fd, 4, SEEK_SET);
+   write(fd, imap_ptrs, 1024);
+
+   //write imap
+   int inode_ptrs[16];
+   inode_ptrs[0] = 1028 + 64;
+   for (i = 1;i < 16;i++) inode_ptrs[i] = 0; 
+   lseek(fd, 1028, SEEK_SET);
+   write(fd, inode_ptrs, 64);
+
+   //write inode
+   int size = 4096;
+   lseek(fd, 1028 + 64, SEEK_SET);
+   write(fd, &size, 4);
+   int type = 0;
+   lseek(fd, 1028 + 64 + 4, SEEK_SET);
+   write(fd, &type, 4);
+   int dptrs[14];
+   dptrs[0] = 1028 + 64 + 64;
+   dptrs[1] = 1028 + 64 + 64 + 64;
+   for (i = 2;i < 14;i++) dptrs[i] = -1;
+   lseek(fd, 1028 + 64 + 8, SEEK_SET);
+   write(fd, dptrs, 56);
+
+   //directory entry 1
+   char name[60];
+   sprintf(name, ".");
+   int inum = 0;
+   lseek(fd, 1028 + 64 + 64, SEEK_SET);
+   write(fd, name, 60);
+   lseek(fd, 1028 + 64 + 64 + 60, SEEK_SET);
+   write(fd, &inum, 4);
+
+   //directory entry 2
+   sprintf(name, "..");
+   lseek(fd, 1028 + 64 + 64 + 64, SEEK_SET);
+   write(fd, name, 60);
+   lseek(fd, 1028 + 64 + 64 + 64 + 60, SEEK_SET);
+   write(fd, &inum, 4);
+
+   //write end of log
+   int endoflog = 1028 + 64 + 64 + 64 + 64;
+   lseek(fd, 0, SEEK_SET);
+   write(fd, &endoflog, 4);
+}
 
 //Creates new fs if one does not already exist
 void initializefs() {
@@ -89,7 +122,6 @@ void initializefs() {
    write(fd, &cr, sizeof(cr));
    printf("CR: %i (%i bytes)\r\n",eol,sizeof(cr));
    printf("     imap_ptr[0] - %i\r\n",cr.imap_ptr[0]);
-*/
    //initialize inode map
    eol = 1028; 
    imap im;
@@ -101,6 +133,7 @@ void initializefs() {
    printf("imap: %i (%i bytes)\r\n",eol,sizeof(im));
    printf("       inode_ptr[0] - %i\r\n",im.inode_ptr[0]);
 
+*/
    //create first inode (root directory)
    eol += 64;
    MFS_Stat_t st;
@@ -213,8 +246,7 @@ int main(int argc, char *argv[]) {
 
    //try and open filesystem -- if it doesn't exist create a new one
    fd = open(filesystem, O_RDWR);
-   if (fd < 0) initializefs();
-
+   if (fd < 0) startfs();
 
    close(fd);
    return 0;
