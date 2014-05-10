@@ -31,5 +31,8 @@ int receive(void);
 int transmit(void);
 int sendpacket(void);
 
+//server utility functions
+void startfs(char *);
+
 #endif // __MFS_h__
 

@@ -27,9 +27,9 @@ int receive(){
 	    struct sockaddr_in raddr;
 	    rc = UDP_Read(sd, &raddr, buffer, BUFFER_SIZE);
 char buffer[BUFFER_SIZE];
-struct sockaddr_in saddr;
-int sd, rc;
-int messageid;
+//struct sockaddr_in saddr;
+//int sd, rc;
+//int messageid;
 	    printf("CLIENT:: read %d bytes (message: '%s')\n", rc, buffer);
         return 0;
     }
