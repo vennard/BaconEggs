@@ -66,7 +66,6 @@ void startfs() {
 
    //write inode
    int size = 4096;
-   //int size = 1028 + (64 * 12);
    lseek(fd, 1028 + 64, SEEK_SET);
    write(fd, &size, 4);
    int type = 0;
@@ -74,7 +73,7 @@ void startfs() {
    write(fd, &type, 4);
    int dptrs[14];
    dptrs[0] = 1028 + 64 + 64;
-   dptrs[1] = 1028 + 64 + 64 + 64;
+   //dptrs[1] = 1028 + 64 + 64 + 64;
    for (i = 2;i < 14;i++) dptrs[i] = 0;
    lseek(fd, 1028 + 64 + 8, SEEK_SET);
    write(fd, dptrs, 56);
@@ -87,7 +86,6 @@ void startfs() {
    write(fd, name, 60);
    lseek(fd, 1028 + 64 + 64 + 60, SEEK_SET);
    write(fd, &inum, 4);
-
    //directory entry 2
    sprintf(name, "..");
    lseek(fd, 1028 + 64 + 64 + 64, SEEK_SET);
@@ -95,6 +93,15 @@ void startfs() {
    lseek(fd, 1028 + 64 + 64 + 64 + 60, SEEK_SET);
    write(fd, &inum, 4);
 
+   //TODO Assuming 4KB directory block -- filling in -1 inums
+   int pt = 1028 + (64 * 4);
+   inum = -1;
+   for (i = 2;i < 64;i++) {
+      lseek(fd, pt + 60, SEEK_SET); 
+      write(fd, &inum, 4);
+      pt += 64;
+   }
+/*
    //TODO attempting to stop invalidate directory entries
    int marker = 1028 + (64 * 4);
    inum = -1;
@@ -103,7 +110,7 @@ void startfs() {
       write(fd, &inum, 4);
       marker += 64;
    }
-
+*/
    //write end of log
    int endoflog = 1028 + 64 + 64 + 64 + 64;
    lseek(fd, 0, SEEK_SET);
