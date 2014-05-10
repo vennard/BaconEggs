@@ -31,8 +31,23 @@ int receive(void);
 int transmit(void);
 int sendpacket(void);
 
+//server utility structs
+typedef struct inode {
+    int size;
+    int type;
+    int data_ptrs[14];
+} inode;
+
+typedef struct direntry {
+    char name[60];
+    int inum;
+} direntry;
+
 //server utility functions
-void startfs(char *);
+void startfs(char* filesystem);
+int findentry(int imap, int inode);
+direntry* getentry(int ptr);
+inode* getinode(int inum);
 
 #endif // __MFS_h__
 

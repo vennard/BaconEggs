@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <string.h>
 #include "udp.h"
 #include "mfs.h"
 
@@ -56,8 +57,36 @@ int main(int argc, char *argv[]) {
    fd = open(filesystem, O_RDWR);
    if (fd < 0) startfs(filesystem);
 
+   printf("Starting testing...\r\n");
+   MFS_Lookup(0, "..");
+
    close(fd);
    return 0;
+}
+
+//Finds the entry matching name in the parent directory pinum
+//returns inode number of name
+int MFS_Lookup(int pinum, char *name) {
+    printf("Called MFS_Lookup with pinum %i and name %s !\r\n",pinum,name);
+    inode *dir = getinode(pinum);
+    printf("Found inode of size %i and type %i\r\n",dir->size,dir->type);
+    int i = 0;
+    int ptr = dir->data_ptrs[0];
+    while(dir->data_ptrs[i] != 0) { //search directory blocks
+        direntry *dp = getentry(ptr);
+        while (dp->inum != -1) {
+            if (strcmp(dp->name,name) == 0) {
+                printf("Found a match! Returning inum of match: %i\r\n",dp->inum);
+                return dp->inum;
+            }
+            ptr += 64;
+            dp = getentry(ptr);
+        }
+        i++;
+        ptr = dir->data_ptrs[i];
+    }
+    printf("failed to find a match! returning -1\r\n");
+    return -1;
 }
 
 
