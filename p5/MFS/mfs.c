@@ -323,7 +323,7 @@ int transmit() //send buffer[], receive response[]
             tnow = time(NULL);
             if (rx >= 0)// && 0 == verify())
             {
-                printf("Server acknowledged request. It's response was valid.\n");;
+//                printf("Server acknowledged request. It's response was valid.\n");;
                 ackd = 1;
                 timeout = 1;
             }
@@ -347,17 +347,17 @@ int receive()
     {
         return -1;
     }
-    printf("Client : Received message (%d bytes) (%s)\n.", rc, response);
+//    printf("Client : Received message (%d bytes) (%s)\n.", rc, response);
     return rc;
 }
 
 //ATTEMPTS TO SEND A PACKET OVER THE UDP SOCKET
 int sendpacket()
 {
-    printf("Client : Sending message..\n");
+//    printf("Client : Sending message..\n");
     rc = UDP_Write(sd, &saddr, message, BUFFERSIZE);
     assert(rc > -1);
-    printf("Client : Sent message..\n");
+//    printf("Client : Sent message..\n");
     return 0;
 }
 
