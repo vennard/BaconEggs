@@ -11,6 +11,7 @@ int eol;
 static inode *iptr;
 inode inode_t;
 direntry direntry_t;
+char rbuf[4096];
 
 void startfs(char* filesystem) {
    int i;
@@ -116,6 +117,7 @@ int findentry(int imap, int inode) {
 }
 
 //returns inode struct of inode with inum
+//saved in global var inode_t
 int getinode(int inum) {
     printf("Called getinode!\r\n");
     iptr = NULL;
@@ -128,12 +130,13 @@ int getinode(int inum) {
     lseek(fd, imap + 4, SEEK_SET);
     read(fd, &temp, 4);
     printf("Read pointer: %i\r\n",temp);
+    if (temp == 0) return -1;
     lseek(fd, temp + (inode*4), SEEK_SET);
     read(fd, &temp, 4);
     printf("Read pointer: %i\r\n",temp);
+    if (temp == 0) return -1;
     lseek(fd, temp, SEEK_SET);
     read(fd, &sz, 4);
-    //iptr->size = sz;
     printf("Read inode size: %i\r\n ",sz);
     lseek(fd, temp + 4, SEEK_SET);
     read(fd, &type, 4);
@@ -149,6 +152,7 @@ int getinode(int inum) {
 }
 
 //loads a directory entry from ptr address
+//saved in global var direntry_t
 int getentry(int ptr) {
     printf("Called getentry!\r\n");
     lseek(fd, ptr, SEEK_SET);
@@ -158,19 +162,38 @@ int getentry(int ptr) {
     return 0;
 }
 
-
-//insert file or folder into the filesystem
-//parent - inum of parent directory 
-//     0 - root directory
-int insert_inode(int type, int parent) {
-    if (type == 0) { //directory
-         
-        return 0;
-    } else if (type == 1) { //file
-        return 0;
-    } else { 
-        return -1;
-    }
+//reads end of log from file and returns it
+int geteol() {
+    int eol;
+    lseek(fd, 0, SEEK_SET);
+    read(fd, &eol, 4);
+    return eol;
 }
+
+//write new eol to start of file
+void seteol(int eol) {
+    lseek(fd, 0, SEEK_SET);
+    write(fd, &eol, 4);
+}
+
+
+//writes data block of size bytes at location
+//returns ptr to end of new location
+int writeblock(int loc, char *buf, int size) {
+    lseek(fd, loc, SEEK_SET);
+    write(fd, buf, size);
+    return loc + size;
+}
+
+//reads size bytes starting at location
+//returns pointer to data
+char* readblock(int loc, int size) {
+    lseek(fd, loc, SEEK_SET);
+    read(fd, rbuf, size);
+    return rbuf;
+}
+
+
+
 
 
