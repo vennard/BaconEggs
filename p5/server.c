@@ -7,9 +7,17 @@
 #include "udp.h"
 #include "mfs.h"
 
-#define BUFFER_SIZE (4096)
+//Message transfer protocol useful defines
+#define BUFFERSIZE (4107)
+#define COMMAND_BYTE (BUFFERSIZE-9)
+#define DATA_BLOCK (0)
+#define KEY_BYTE (BUFFERSIZE-11)
+#define MESSAGE_ID (BUFFERSIZE-10)
+#define CMD_INT1 (BUFFERSIZE-8)
+#define CMD_INT2 (BUFFERSIZE-4)
+
 int messagecount;
-char buffer[BUFFER_SIZE];
+char buffer[BUFFERSIZE];
 int MFS_Lookup_h(int pinum, char *name);
 int MFS_Init_h(char *hostname, int port);
 int MFS_Stat_h(int inum, MFS_Stat_t *m);
@@ -27,20 +35,20 @@ void receiving() {
     messagecount = 0;
     while (1) {
 	    struct sockaddr_in s;
-	    int rc = UDP_Read(sd, &s, buffer, BUFFER_SIZE);
+	    int rc = UDP_Read(sd, &s, buffer, BUFFERSIZE);
 	    if (rc > 0) {
 	        printf("SERVER:: read %d bytes (message: '%s')\n", rc, buffer);
-            if ((buffer[BUFFER_SIZE-3] == messagecount)&&(buffer[BUFFER_SIZE-2] == 'k')&&(buffer[BUFFER_SIZE-1] == 'z'))  {
+            if ((buffer[BUFFERSIZE-3] == messagecount)&&(buffer[BUFFERSIZE-2] == 'k')&&(buffer[BUFFERSIZE-1] == 'z'))  {
                 messagecount++;
                 //idempotency -- only process messages once - always ack
                 printf("SERVER processing unique message (%d bytes)!\r\n",rc);
             }
-	         char reply[BUFFER_SIZE];
-            reply[0] = buffer[BUFFER_SIZE-3]; //send ack number back with special code
+	         char reply[BUFFERSIZE];
+            reply[0] = buffer[BUFFERSIZE-3]; //send ack number back with special code
             reply[1] = 'a';
             reply[2] = 'c';
             reply[3] = 'k';
-	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
+	         rc = UDP_Write(sd, &s, reply, BUFFERSIZE);
 	    }
     }
 }

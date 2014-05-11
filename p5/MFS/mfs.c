@@ -8,8 +8,9 @@
 #include "mfs.h"
 
 #define BUFFERSIZE (4107)
+#define debug (1)
 
-//Message transfer protocol
+//Message transfer protocol useful defines
 #define COMMAND_BYTE (BUFFERSIZE-9)
 #define DATA_BLOCK (0)
 #define KEY_BYTE (BUFFERSIZE-11)
@@ -27,33 +28,38 @@ int messageid;
 
 int MFS_Init(char *hostname, int port)
 {
-    printf("MFS_Init called with hostname %s and port %d.\n", hostname, port);
+    if (debug) printf("MFS_Init called with hostname %s and port %d.\n", hostname, port);
 
     //INIT VARIABLES
     messageid = 0; //start the messageid count
 
     //PRIMATIVE CHECKS
-    assert (port > -1);
-    assert (hostname != NULL);
+    if (port < 0 || hostname == NULL){
+        printf("ERROR: MFS_Init received invalid parameters.\n");
+        return -1;
+    }
 
     //SET UP SOCKET
     sd = UDP_Open(0);
-    assert(sd > -1);
+    if (sd < 0){
+        printf("UDP_Open in MFS_Init failed.\n");
+        return -1;
+    }
     rc = UDP_FillSockAddr(&saddr, hostname, port);
-    assert (rc == 0);
+    if (rc < 0){
+        printf("UDP_FillSockAddr in MFS_Init failed.\n");
+        return -1;
+    }
     fcntl(sd, F_SETFL, O_NONBLOCK); //set to non-blocking
 
     //SET UP PACKET
     sprintf(message, "This is a test.");
-    //message[DATA_BLOCK] = "This is a test.\n";
-    message[KEY_BYTE]     = 'k';
+    message[KEY_BYTE] = 'k';
     message[COMMAND_BYTE] = 0;
-    message[MESSAGE_ID]   = messageid;
+    message[MESSAGE_ID] = messageid;
 
     //SEND PACKET
     transmit();
-
-    //VERIFY PACKET CONTENTS
     
     return 0;
 }
@@ -64,6 +70,14 @@ int MFS_Lookup(int pinum, char *name)
     //find entry name
     //return inode of name
     //else return -1 (invalid pinum, name does not exist in pinum)
+
+    if (debug) printf("MFS_Lookup called with pinum %d and name %s.\n", pinum, name);
+
+    //PRIMATIVE CHECKS
+    if (pinum < 0 || name == NULL || strlen(name) > 60){
+        printf("ERROR: MFS_Lookup received invalid parameters.\n");
+        return -1;
+    }
 
     //SET UP PACKET
     sprintf(message, name);
@@ -81,6 +95,7 @@ int MFS_Lookup(int pinum, char *name)
         printf("ERROR: MFS_Lookup received failing packet.");        
         return -1;
     }
+    
     return response[CMD_INT2];
 }
 
@@ -89,8 +104,15 @@ int MFS_Stat(int inum, MFS_Stat_t *m)
     //return stat info about file inum
     //return 0, else return -1 if inum doesn't exist
 
+    if (debug) printf("MFS_Stat called with inum %d.\n", inum);
+
+    //PRIMATIVE CHECKS
+    if (inum < 0 || m == NULL){
+        printf("ERROR: MFS_LStat received invalid parameters.\n");
+        return -1;
+    }
+
     //SET UP PACKET
-    //sprintf(message, name);
     message[KEY_BYTE]     = 'k';
     message[COMMAND_BYTE] = 2;
     message[MESSAGE_ID]   = messageid;
@@ -105,8 +127,14 @@ int MFS_Stat(int inum, MFS_Stat_t *m)
         printf("ERROR: MFS_Stat received failing packet.");        
         return -1;
     }
-    m->type = response[DATA_BLOCK];
-    m->size = response[DATA_BLOCK+4];
+
+    memcpy(m, &response[DATA_BLOCK], 8);
+
+    if(debug) 
+    {
+        printf("m->type = %d\n", m->type);
+        printf("m->size = %d\n", m->size);   
+    }
 
     return 0;
 }
@@ -125,7 +153,7 @@ int MFS_Write(int inum, char *buffer, int block)
     }
    
     //SET UP PACKET
-    sprintf(message, buffer);
+    memcpy(message, buffer, BUFFERSIZE);
     message[KEY_BYTE]     = 'k';
     message[COMMAND_BYTE] = 3;
     message[MESSAGE_ID]   = messageid;
@@ -161,7 +189,7 @@ int MFS_Read(int inum, char *buffer, int block)
     }
    
     //SET UP PACKET
-    //sprintf(message, buffer);
+    sprintf(message, "The greatest gift is a passion for reading.");
     message[KEY_BYTE]     = 'k';
     message[COMMAND_BYTE] = 4;
     message[MESSAGE_ID]   = messageid;
@@ -190,6 +218,32 @@ int MFS_Creat(int pinum, int type, char *name)
     //return 0 on success, -1 on failure
     //pinum does not exist, name is too long
     //if name already exists, return success
+
+    //CRUDE CHECKS
+    if (pinum < 0 ||  name == NULL || strlen(name) > 60)
+    {
+        printf("ERROR: MFS_Creat received invalid parameters.\n");
+        return -1;
+    }
+   
+    //SET UP PACKET
+    memcpy(message, name, strlen(name)+1); //include '\0'
+    message[KEY_BYTE]     = 'k';
+    message[COMMAND_BYTE] = 5;
+    message[MESSAGE_ID]   = messageid;
+    message[CMD_INT1] = pinum;
+    message[CMD_INT2] = type;
+
+    //SEND PACKET
+    transmit();
+
+    //VERIFY PACKET CONTENTS
+    if (response[CMD_INT2] < 0)
+    {        
+        printf("ERROR: MFS_Creat received failing packet.");        
+        return -1;
+    }
+
     return 0;
 }
 
@@ -199,12 +253,54 @@ int MFS_Unlink(int pinum, char *name)
     //return 0 on success, -1 on failure
     //pinum does not exist, directory is not empty
     //name not exisiting is not a failure
+
+    //CRUDE CHECKS
+    if (pinum < 0 ||  name == NULL || strlen(name) > 60)
+    {
+        printf("ERROR: MFS_Unlink received invalid parameters.\n");
+        return -1;
+    }
+   
+    //SET UP PACKET
+    memcpy(message, name, strlen(name)+1); //include '\0'
+    message[KEY_BYTE]     = 'k';
+    message[COMMAND_BYTE] = 6;
+    message[MESSAGE_ID]   = messageid;
+    message[CMD_INT1] = pinum;
+
+    //SEND PACKET
+    transmit();
+
+    //VERIFY PACKET CONTENTS
+    if (response[CMD_INT2] < 0)
+    {        
+        printf("ERROR: MFS_Unlink received failing packet.");        
+        return -1;
+    }
+
     return 0;
 }
 
 int MFS_Shutdown()
 {
     //tells serve to sync and exit(0)
+
+    //SET UP PACKET
+    sprintf(message, "Better to flee death than to feel it's grip.");
+    message[KEY_BYTE]     = 'k';
+    message[COMMAND_BYTE] = 7;
+    message[MESSAGE_ID]   = messageid;
+
+    //SEND PACKET
+    transmit();
+
+    //VERIFY PACKET CONTENTS
+    if (response[CMD_INT2] < 0)
+    {        
+        printf("ERROR: MFS_Shutdown received failing packet.");        
+        return -1;
+    }
+
     return 0;
 }
 
@@ -269,9 +365,9 @@ int sendpacket()
 //CHECKS THAT RESPONSE IS VALID FOR THE SENT BUFFER
 int verify()
 {
-    if(message[COMMAND_BYTE] == response[COMMAND_BYTE] && message[MESSAGE_ID] == response[MESSAGE_ID] 
-       && message[KEY_BYTE] == response[KEY_BYTE] && response[CMD_INT1] == 'a' && response[CMD_INT1+1] == 'c'
-       && response[CMD_INT1+2] == 'k' && response[CMD_INT1+3] == 'd')
+    if( message[COMMAND_BYTE] == response[COMMAND_BYTE] && message[MESSAGE_ID] == response[MESSAGE_ID] 
+        && message[KEY_BYTE] == response[KEY_BYTE] && response[CMD_INT1] == 'a' && response[CMD_INT1+1] == 'c'
+        && response[CMD_INT1+2] == 'k' && response[CMD_INT1+3] == 'd')
         return 0;
-    else return -1;
+    return -1;
 }
