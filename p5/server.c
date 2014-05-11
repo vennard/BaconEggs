@@ -7,13 +7,24 @@
 #include "udp.h"
 #include "mfs.h"
 
-#define BUFFER_SIZE (4096)
+#define BUFFER_SIZE (4107)
 #define DEBUG (0)
+#define COMMAND_BYTE (BUFFER_SIZE-9)
+#define DATA_BLOCK (0)
+#define KEY_BYTE (BUFFER_SIZE-11)
+#define MESSAGE_ID (BUFFER_SIZE-10)
+#define CMD_INT1 (BUFFER_SIZE-8)
+#define CMD_INT2 (BUFFER_SIZE-4)
+#define TIMEOUT (3)
+
 //local variables
-int portnum, fd;
+int portnum, fd, rc, sd;
+struct sockaddr_in s;
 char *filesystem;
 int messagecount;
 char buffer[BUFFER_SIZE];
+char reply[BUFFER_SIZE];
+char data[4097];
 MFS_Stat_t stat_t;
 
 //local functions
@@ -25,37 +36,43 @@ int MFS_Read_h(int inum, char *buffer, int block);
 int MFS_Creat_h(int pinum, int type, char *name);
 int MFS_Unlink_h(int pinum, char *name);
 int MFS_Shutdown_h();
+int processcommand(int cmd);
 
 //loop waiting for data to be recieved
 void receiving() {
-    int sd = UDP_Open(10021);
+    sd = UDP_Open(10021);
     assert(sd > -1);
     printf("SERVER: About to enter receiver waiting loop!\r\n");
-    messagecount = 0;
     while (1) {
-	    struct sockaddr_in s;
-	    int rc = UDP_Read(sd, &s, buffer, BUFFER_SIZE);
+	    rc = UDP_Read(sd, &s, buffer, BUFFER_SIZE);
 	    if (rc > 0) {
 	        printf("SERVER:: read %d bytes (message: '%s')\n", rc, buffer);
-            if ((buffer[BUFFER_SIZE-3] == messagecount)&&(buffer[BUFFER_SIZE-2] == 'k')&&(buffer[BUFFER_SIZE-1] == 'z'))  {
+           if (DEBUG) printf("Recieved command %d, messageid %d, key value %c, command int one %d, command int two %d.\n",
+          buffer[COMMAND_BYTE], buffer[MESSAGE_ID], buffer[KEY_BYTE], buffer[CMD_INT1], buffer[CMD_INT2]);
+            if (buffer[KEY_BYTE] == 'k')  {
                 messagecount++;
                 //idempotency -- only process messages once - always ack
-                //processcommand();
+                memcpy(data, buffer, 4096);
+                data[4096] = '\0';
+                processcommand(buffer[COMMAND_BYTE]);
                 printf("SERVER processing unique message (%d bytes)!\r\n",rc);
+            } else { //send dumb ack
+               reply[COMMAND_BYTE] = buffer[COMMAND_BYTE];   
+               reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+               reply[KEY_BYTE] = 'k';
+               char ackd[4];
+               sprintf(ackd,"ackd");
+               memcpy(&reply[CMD_INT1], ackd, 4);
+               reply[CMD_INT2] = 0; //return val
+	            rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             }
-	         char reply[BUFFER_SIZE];
-            reply[0] = buffer[BUFFER_SIZE-3]; //send ack number back with special code
-            reply[1] = 'a';
-            reply[2] = 'c';
-            reply[3] = 'k';
-	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
 	    }
     }
 }
 
 //TODO increase directory sizes correctly
 int main(int argc, char *argv[]) {
-   //receiving();
+   messagecount = 0; //initialize ack count
 
    //check and save off input args
    if (argc != 3) {
@@ -69,6 +86,8 @@ int main(int argc, char *argv[]) {
    //try and open filesystem -- if it doesn't exist create a new one
    fd = open(filesystem, O_RDWR);
    if (fd < 0) startfs(filesystem);
+
+   //receiving();
 
    printf("Starting testing...\r\n");
    if (MFS_Creat_h(0,0,"newdir") != 0) printf("Error with MFS_Creat_h\r\n");
@@ -94,24 +113,75 @@ int main(int argc, char *argv[]) {
 //necessary data in buffer to be sent back out as ack
 //returns 0 on success, -1 on failure
 int processcommand(int cmd) {
+    int retval;
+    char bf[4];
+    sprintf(bf,"ackd");
     switch (cmd) {
         case 0: //MFS_Init
+            MFS_Init_h();
             break;
         case 1: //MFS_Lookup
+            MFS_Lookup_h(buffer[CMD_INT1], data);
             break;
         case 2: //MFS_Stat
+            retval = MFS_Stat_h(buffer[CMD_INT1]);
+            //send response
+            memcpy(reply, &stat_t, sizeof(stat_t));
+            reply[KEY_BYTE] = 'k';
+            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[COMMAND_BYTE] = 2;
+            memcpy(&reply[CMD_INT1],bf,4);  
+            reply[CMD_INT2] = retval;
+	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             break;
         case 3: //MFS_Write
+            retval = MFS_Write_h(buffer[CMD_INT1],data,buffer[CMD_INT2]);
+            //send response
+            reply[KEY_BYTE] = 'k';
+            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[COMMAND_BYTE] = 3;
+            memcpy(&reply[CMD_INT1],bf,4);  
+            reply[CMD_INT2] = retval;
+	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             break;
         case 4: //MFS_Read
+            retval = MFS_Read_h(buffer[CMD_INT1],reply,buffer[CMD_INT2]);
+            reply[KEY_BYTE] = 'k';
+            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[COMMAND_BYTE] = 4;
+            memcpy(&reply[CMD_INT1],bf,4);  
+            reply[CMD_INT2] = retval;
+	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             break;
         case 5: //MFS_Creat
+            retval = MFS_Creat_h(buffer[CMD_INT1],buffer[CMD_INT2],data);
+            reply[CMD_INT2] = retval;
+            reply[KEY_BYTE] = 'k';
+            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[COMMAND_BYTE] = 5;
+            memcpy(&reply[CMD_INT1],bf,4);  
+            reply[CMD_INT2] = retval;
+	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             break;
         case 6: //MFS_Unlink
+            retval = MFS_Unlink_h(buffer[CMD_INT1],buffer);
+            reply[CMD_INT2] = retval;
+            reply[KEY_BYTE] = 'k';
+            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[COMMAND_BYTE] = 6;
+            memcpy(&reply[CMD_INT1],bf,4);  
+            reply[CMD_INT2] = retval;
+	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             break;
         case 7: //MFS_Shutdown
+            MFS_Shutdown_h();
             break;
-        default:
+        default: //send failed response
+            reply[KEY_BYTE] = 'k';
+            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[COMMAND_BYTE] = -1;
+            reply[CMD_INT2] = -1;
+	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             return -1;
             break;
     }
@@ -132,6 +202,12 @@ int MFS_Lookup_h(int pinum, char *name) {
         while (dp->inum != -1) {
             if (strcmp(dp->name,name) == 0) {
                 if (DEBUG) printf("Found entry! return inum %i \r\n",dp->inum);
+                //Send reply
+                reply[KEY_BYTE] = 'k';
+                reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+                reply[COMMAND_BYTE] = 1;
+                reply[CMD_INT1] = dp->inum;
+	             rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
                 return dp->inum;
             }
             ptr += 64;
@@ -149,7 +225,11 @@ int MFS_Lookup_h(int pinum, char *name) {
 //Takes host name and port number 
 int MFS_Init_h() {
     if (DEBUG) printf("MFS_Init: called!\r\n");
-    //TODO send ack
+    reply[COMMAND_BYTE] = buffer[COMMAND_BYTE];   
+    reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+    reply[KEY_BYTE] = 'k';
+    reply[CMD_INT2] = 0; //return val
+	 rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
     return 0;
 }
 
@@ -162,6 +242,7 @@ int MFS_Stat_h(int inum) {
     if (DEBUG) printf("found inode size: %i, type %i\r\n",inode_t.size,inode_t.type);
     stat_t.size = inode_t.size;
     stat_t.type = inode_t.type;
+    
     return 0;
 }
 
@@ -321,7 +402,14 @@ int MFS_Unlink_h(int pinum, char *name) {
 
 int MFS_Shutdown_h() {
    if (DEBUG) printf("MFS_Shutdown: exiting...\r\n");
-   //TODO send response first
+   reply[KEY_BYTE] = 'k';
+   reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+   reply[COMMAND_BYTE] = 7;
+   char bf[4];
+   sprintf(bf,"ackd");
+   memcpy(&reply[CMD_INT1],bf,4);
+   reply[CMD_INT2] = 0;
+	rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
    shutdownfs();
    return 0;
 }
