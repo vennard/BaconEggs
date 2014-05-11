@@ -196,6 +196,7 @@ int MFS_Write_h(int inum, char *buf, int block) {
     //then update checkregion ptr and eol
     writeblock(4+(imap*4), (char*)&imapptr, 4);
     writeblock(0, (char*)&eol, 4);
+    callfsync();
     return 0;
 }
 
@@ -267,6 +268,7 @@ int MFS_Creat_h(int pinum, int type, char *name) {
             //update check region (eol and ptr)
             writeblock(4 + (4*(newinum /16)), &newimap, 4);
             writeblock(0, &eol, 4);
+            callfsync();
             return 0;
         }
     }
