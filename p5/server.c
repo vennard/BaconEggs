@@ -71,6 +71,7 @@ int main(int argc, char *argv[]) {
 
    printf("Starting testing...\r\n");
    if (MFS_Creat_h(0,0,"newdir") != 0) printf("Error with MFS_Creat_h\r\n");
+   if (MFS_Creat_h(0,1,"newfile") != 0) printf("Error with MFS_Creat_h\r\n");
    
    //MFS_Lookup_h(0, "..");
    //MFS_Stat_h(0);
@@ -249,6 +250,9 @@ int MFS_Creat_h(int pinum, int type, char *name) {
                 block[0].inum = pinum;
                 sprintf(block[1].name, ".");
                 block[1].inum = newinum;
+                //Fill in the remaing inums to -1
+                int i;
+                for (i = 2;i < 64;i++) block[i].inum = -1;
                 eol = writeblock(eol, block, 4096);
                 printf("data block saved at %i: entry 1: . %i entry 2: .. %i\r\n",temp.data_ptrs[0],newinum, pinum); 
             }
