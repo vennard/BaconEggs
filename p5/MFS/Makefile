@@ -16,8 +16,8 @@ udp.o: udp.c $(HEADERS)
 libmfs.so: mfs.o 
 	gcc $(FLAGS_S) libmfs.so mfs.o  
 
-client: client.c 
-	gcc $(FLAGS_R) client client.c udp.o $(FLAG_SHOW_ERROR)
+client: test.c 
+	gcc $(FLAGS_R) client test.c udp.o $(FLAG_SHOW_ERROR)
 
 server: server.c
 	gcc $(FLAGS_R) server server.c udp.o $(FLAG_SHOW_ERROR)

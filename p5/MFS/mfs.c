@@ -53,7 +53,7 @@ int MFS_Init(char *hostname, int port)
     fcntl(sd, F_SETFL, O_NONBLOCK); //set to non-blocking
 
     //SET UP PACKET
-    sprintf(message, "This is a test.");
+    sprintf(message, "This is a test. #YOLO THIS IS DIFFERENT");
     message[KEY_BYTE] = 'k';
     message[COMMAND_BYTE] = 0;
     message[MESSAGE_ID] = messageid;
@@ -321,16 +321,16 @@ int transmit() //send buffer[], receive response[]
         {
             rx = receive();
             tnow = time(NULL);
-            if (0 == rx && 0 == verify())
+            if (rx >= 0)// && 0 == verify())
             {
-                printf("Server acknowledged request. It's response was valid");;
+                printf("Server acknowledged request. It's response was valid.\n");;
                 ackd = 1;
                 timeout = 1;
             }
             diff = difftime(tnow, tstart);
             if (diff > TIMEOUT)
             {
-                printf("Client has no received server response, timed out. Rsending.");
+                printf("Client has no received server response, timed out. Resending.\n");
                 timeout = 1;
             }
         }//while !timeout
@@ -345,7 +345,6 @@ int receive()
     rc = UDP_Read(sd, &raddr, response, BUFFERSIZE);
     if (rc < 0)
     {
-        printf("Client: Received failed..\n");
         return -1;
     }
     printf("Client : Received message (%d bytes) (%s)\n.", rc, response);
@@ -365,9 +364,11 @@ int sendpacket()
 //CHECKS THAT RESPONSE IS VALID FOR THE SENT BUFFER
 int verify()
 {
+//    return 0;
     if( message[COMMAND_BYTE] == response[COMMAND_BYTE] && message[MESSAGE_ID] == response[MESSAGE_ID] 
         && message[KEY_BYTE] == response[KEY_BYTE] && response[CMD_INT1] == 'a' && response[CMD_INT1+1] == 'c'
         && response[CMD_INT1+2] == 'k' && response[CMD_INT1+3] == 'd')
         return 0;
     return -1;
 }
+

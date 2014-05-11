@@ -6,32 +6,56 @@
 #include "udp.h"
 #include "mfs.h"
 
-#define BUFFER_SIZE (4096)
+#define debug (1)
+
+#define BUFFER_SIZE (4107)
+#define COMMAND_BYTE (BUFFER_SIZE-9)
+#define DATA_BLOCK (0)
+#define KEY_BYTE (BUFFER_SIZE-11)
+#define MESSAGE_ID (BUFFER_SIZE-10)
+#define CMD_INT1 (BUFFER_SIZE-8)
+#define CMD_INT2 (BUFFER_SIZE-4)
+#define TIMEOUT (3)
+
 int messagecount;
 char buffer[BUFFER_SIZE];
+char reply[BUFFER_SIZE];
+char data[4097];
 
 //loop waiting for data to be recieved
-void receiving() {
-    int sd = UDP_Open(10021);
-    assert(sd > -1);
-    printf("SERVER: About to enter receiver waiting loop!\r\n");
-    messagecount = 0;
+void receiving(int port) {
+    char ackd[] = {'a','c','k','d'};
+
+    //OPEN UDP PORT
+    int sd = UDP_Open(port);
+    if (sd < 0){
+        printf("SERVER : There was an error opening port %d. Exiting.\r\n", port);
+	exit(-1);
+    }
+
+    if (debug) printf("SERVER : About to enter receiver waiting loop!\r\n");
+    
+    //MAIN RECEIVING LOOP
     while (1) {
 	    struct sockaddr_in s;
+
+	    //READ A PACKET FROM THE UDP PORT
 	    int rc = UDP_Read(sd, &s, buffer, BUFFER_SIZE);
 	    if (rc > 0) {
-	        printf("SERVER:: read %d bytes (message: '%s')\n", rc, buffer);
-            if ((buffer[BUFFER_SIZE-3] == messagecount)&&(buffer[BUFFER_SIZE-2] == 'k')&&(buffer[BUFFER_SIZE-1] == 'z'))  {
-                messagecount++;
-                //idempotency -- only process messages once - always ack
-                printf("SERVER processing unique message (%d bytes)!\r\n",rc);
-            }
-	         char reply[BUFFER_SIZE];
-            reply[0] = buffer[BUFFER_SIZE-3]; //send ack number back with special code
-            reply[1] = 'a';
-            reply[2] = 'c';
-            reply[3] = 'k';
-	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
+	        printf("SERVER : read %d bytes.\n", rc);
+	    	printf("Recieved command %d, messageid %d, key value %c, command int one %d, command int two %d.\n", buffer[COMMAND_BYTE], buffer[MESSAGE_ID], buffer[KEY_BYTE], buffer[CMD_INT1], buffer[CMD_INT2]);
+		memcpy(data, &buffer[0], 4096);
+
+		//FORMAT DATA AS STRING TO PRINT, DON'T INCLUDE NORMALLY
+		data[4096] = '\0';
+
+		printf("Data: %s\n", data);
+            	reply[COMMAND_BYTE] = buffer[COMMAND_BYTE];
+           	reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            	reply[KEY_BYTE] = 'k'; //reset key value
+	    	memcpy(&reply[CMD_INT1], ackd, 4); //"ackd"
+	    	reply[CMD_INT2] = 0; //return value
+	    	rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
 	    }
     }
 }
@@ -125,7 +149,7 @@ void initializefs() {
 }
 
 int main(int argc, char *argv[]) {
-   //receiving();
+   receiving(10021);
 
    //check and save off input args
    if (argc != 3) {
