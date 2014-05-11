@@ -86,6 +86,65 @@ void startfs(char* filesystem) {
    printf(" done!\r\n");
 }
 
+//returns the number of the next free inode
+//-1 on failure
+int nextinum() {
+    int count = 0;
+    int limit = 4 + (4 * 256); //end of check region
+    int start = 4;
+    int imap_ptr, inode;
+    while (start < limit) { //loop through imap regions
+        lseek(fd, start, SEEK_SET);
+        read(fd, &imap_ptr, 4);
+        //check if we need new imap pointer region
+        if (imap_ptr == 0) {
+            printf("New imap region needed! next inum is %i!\r\n",count);
+            return count;
+        }
+        int tptr = imap_ptr;
+        while (tptr < imap_ptr + 64) {
+            lseek(fd, tptr, SEEK_SET);
+            read(fd, &inode, 4);
+            if (inode == 0) { //found available
+                printf("Found %i as the next free inum!\r\n",count);
+                return count;
+            }
+            tptr += 4; 
+            count++;
+        }
+        start += 4;
+    }
+    return -1;
+}
+
+//ptr points to start of data block with dir entries
+//looks for and inserts entry of name 
+//returns 0 if found matching name
+//returns ptr to where new inum should be saved if successfully inserted new entry
+//returns -1 if failed
+int creatdirentry(int ptr, char *name) {
+    int tptr = ptr;
+    int limit = ptr + 4096;
+    int tnum = 0;
+    char tname[60];
+    lseek(fd, ptr, SEEK_SET);
+    //loop through each entry in block
+    while (tptr < limit) {
+        read(fd, tname, 60);
+        lseek(fd, tptr+60, 4); 
+        read(fd, &tnum, 4);
+        if((strcmp(tname, name) == 0)&&(tnum != -1)) return 1; //found match
+        if(tnum == -1) { //found free location
+            //create and save new entry
+            lseek(fd, tptr, SEEK_SET);
+            write(fd, name, 60);
+            return tptr+60;
+        }
+        tptr += 64;
+        lseek(fd, tptr, SEEK_SET);
+    }
+    return -1; //block is full
+}
 //finds next unallocated ptr
 //ptr - start address of array
 //returns free array locations address

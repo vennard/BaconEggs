@@ -72,6 +72,7 @@ int main(int argc, char *argv[]) {
    printf("Starting testing...\r\n");
    //MFS_Lookup_h(0, "..");
    //MFS_Stat_h(0);
+   //MFS_Read_h(0, rbuf, 0);
    char buf[60];
    sprintf(buf, "new data block info");
    if (-1 == MFS_Write_h(1, buf, 0)) printf("Failed!\r\n"); //should fail, needs to be called on created inode
@@ -197,8 +198,50 @@ int MFS_Write_h(int inum, char *buf, int block) {
     return 0;
 }
 
+//reads data from inode with inum at block
+//saves data at buffer
 int MFS_Read_h(int inum, char *buffer, int block) {
     printf("Called MFS_Read...");
-      
-   return 0;
+    if (getinode(inum) == -1) return -1; //fails on invalid inum
+    if ((block < 0)||(block > 13)||(inode_t.data_ptrs[block] == 0)) return -1; //fail on invalid block
+    buffer = readblock(inode_t.data_ptrs[block], 4096);
+    printf(" got: %s\r\n",buffer);
+    return 0;
 }
+
+//creates new file or directory in the parent directory pinum
+int MFS_Creat_h(int pinum, int type, char *name) {
+    printf("Called MFS_Creat_h...");    
+    if (getinode(pinum) == -1) return -1; //fail on bad pinum
+    if (inode_t.type != 0) return -1; //inum not directory
+    if ((type < 0)||(type > 1)) return -1; //invalid type
+    if (strlen(name) > 60) return -1; //name too long
+    int i = 0; 
+    //search through inode ptrs for free entry
+    while (inode_t.data_ptrs[i] != 0) {
+        //search through data blocks for free location
+        int check = creatdirentry(inode_t.data_ptrs[i], name);
+        if (check == -1) i++; //block full, check next block
+        if (check == 0) return 0; //found matching name, success
+        if (check > 0) { //check is ptr to loc to save new inum
+            //create new inode
+            inode temp;
+            temp.type = type;
+            //find free inode number
+            int newinum = nextinum();
+            if (newinum == -1) return -1;
+            //write new inode
+            if (type == 0) {
+                temp.size = 4096; //dir start with allocated block
+                //create base entries . and ..
+                //TODO left off here
+            }
+            if (type == 1) temp.size = 0; //files start empty
+            //write new imap region
+            //write new ptr in checkregion
+
+        }
+    }
+    return 0;
+}
+
