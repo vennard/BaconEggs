@@ -58,6 +58,7 @@ void seteol(int eol);
 int geteol(void);
 int creatdirentry(int ptr, char *name);
 int nextinum(void);
+void callfsync(void);
 
 #endif // __MFS_h__
 
