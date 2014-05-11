@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
    if (fd < 0) startfs(filesystem);
 
    printf("Starting testing...\r\n");
-   if (MFS_Creat_h(0,1,"newfile.txt") != 0) printf("Error with MFS_Creat_h\r\n");
+   //if (MFS_Creat_h(0,1,"newfile.txt") != 0) printf("Error with MFS_Creat_h\r\n");
    //MFS_Lookup_h(0, "..");
    //MFS_Stat_h(0);
    //MFS_Read_h(0, rbuf, 0);
@@ -273,3 +273,13 @@ int MFS_Creat_h(int pinum, int type, char *name) {
     return -1; //must be full directory or something weird
 }
 
+//removes file or directory from pinum directory
+int MFS_Unlink_h(int pinum, char *name) {
+   return 0;
+}
+
+int MFS_Shutdown_h() {
+   printf("Called MFS_Shutdown... closing files and exiting\r\n");
+   //TODO may have to add close(fd);
+   return 0;
+}
