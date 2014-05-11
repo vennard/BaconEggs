@@ -86,6 +86,11 @@ void startfs(char* filesystem) {
    printf(" done!\r\n");
 }
 
+void shutdownfs() {
+   close(fd);
+   exit(0);
+}
+
 //returns the number of the next free inode
 //-1 on failure
 int nextinum() {

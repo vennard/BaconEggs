@@ -59,6 +59,7 @@ int geteol(void);
 int creatdirentry(int ptr, char *name);
 int nextinum(void);
 void callfsync(void);
+void shutdownfs(void);
 
 #endif // __MFS_h__
 
