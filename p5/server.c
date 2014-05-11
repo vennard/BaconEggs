@@ -70,11 +70,11 @@ int main(int argc, char *argv[]) {
    if (fd < 0) startfs(filesystem);
 
    printf("Starting testing...\r\n");
-   MFS_Lookup_h(0, "..");
-   MFS_Stat_h(0);
+   //MFS_Lookup_h(0, "..");
+   //MFS_Stat_h(0);
    char buf[60];
    sprintf(buf, "new data block info");
-   MFS_Write_h(1, buf, 0); //should fail, needs to be called on created inode
+   if (-1 == MFS_Write_h(1, buf, 0)) printf("Failed!\r\n"); //should fail, needs to be called on created inode
 
    close(fd);
    return 0;
@@ -195,4 +195,10 @@ int MFS_Write_h(int inum, char *buf, int block) {
     writeblock(4+(imap*4), (char*)&imapptr, 4);
     writeblock(0, (char*)&eol, 4);
     return 0;
+}
+
+int MFS_Read_h(int inum, char *buffer, int block) {
+    printf("Called MFS_Read...");
+      
+   return 0;
 }

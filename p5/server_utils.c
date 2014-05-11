@@ -25,7 +25,7 @@ void startfs(char* filesystem) {
    for (i = 1;i < 256;i++) imap_ptrs[i] = 0; 
    lseek(fd, 4, SEEK_SET);
    write(fd, imap_ptrs, 1024);
-   printf("FILESYSTEM MAPPING: \r\nimap_ptrs: 4\r\n");
+   //printf("FILESYSTEM MAPPING: \r\nimap_ptrs: 4\r\n");
 
    //write imap
    int inode_ptrs[16];
@@ -33,10 +33,10 @@ void startfs(char* filesystem) {
    for (i = 1;i < 16;i++) inode_ptrs[i] = 0; 
    lseek(fd, 1028, SEEK_SET);
    write(fd, inode_ptrs, 64);
-   printf("inode_ptrs: 1028\r\n"); 
+   //printf("inode_ptrs: 1028\r\n"); 
 
    //write inode
-   printf("inode: size %i - type %i - ptrs %i\r\n",1028+64,1028+64+4,1028+64+8);
+   //printf("inode: size %i - type %i - ptrs %i\r\n",1028+64,1028+64+4,1028+64+8);
    int size = 4096;
    lseek(fd, 1028 + 64, SEEK_SET);
    write(fd, &size, 4);
@@ -64,8 +64,8 @@ void startfs(char* filesystem) {
    write(fd, name, 60);
    lseek(fd, 1028 + 64 + 64 + 64 + 60, SEEK_SET);
    write(fd, &inum, 4);
-   printf("datablock: \r\nEntry 0: %i\r\n",dptrs[0]);
-   printf("Entry 1: %i\r\n",dptrs[0] + 64);
+   //printf("datablock: \r\nEntry 0: %i\r\n",dptrs[0]);
+   //printf("Entry 1: %i\r\n",dptrs[0] + 64);
 
    //4KB directory block -- filling in -1 to invalid inums
    int pt = 1028 + (64 * 4);
