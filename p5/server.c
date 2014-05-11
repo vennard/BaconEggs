@@ -39,6 +39,7 @@ void receiving() {
             if ((buffer[BUFFER_SIZE-3] == messagecount)&&(buffer[BUFFER_SIZE-2] == 'k')&&(buffer[BUFFER_SIZE-1] == 'z'))  {
                 messagecount++;
                 //idempotency -- only process messages once - always ack
+                //processcommand();
                 printf("SERVER processing unique message (%d bytes)!\r\n",rc);
             }
 	         char reply[BUFFER_SIZE];
@@ -189,9 +190,9 @@ int MFS_Write_h(int inum, char *buf, int block) {
     } //TODO left off here
     imaps[inode] = inodeptr; //set new ptr 
     imapptr = eol;
-    eol = writeblock(eol, imaps, 64); //write out 
+    eol = writeblock(eol, (char*)imaps, 64); //write out 
     //then update checkregion ptr and eol
-    writeblock(4+(imap*4), &imapptr, 4);
-    writeblock(0, &eol, 4);
+    writeblock(4+(imap*4), (char*)&imapptr, 4);
+    writeblock(0, (char*)&eol, 4);
     return 0;
 }
