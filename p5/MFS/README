@@ -1,6 +1,8 @@
 CS537 P5
 Zach Waltz and John Vennard
 
+REMEMBER: export LD_LIBRARY_PATH=.
+
 
 Summary of filesystem usage:
 
