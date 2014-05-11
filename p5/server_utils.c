@@ -98,7 +98,7 @@ int nextinum() {
         read(fd, &imap_ptr, 4);
         //check if we need new imap pointer region
         if (imap_ptr == 0) {
-            printf("New imap region needed! next inum is %i!\r\n",count);
+            //printf("New imap region needed! next inum is %i!\r\n",count);
             return count;
         }
         int tptr = imap_ptr;
@@ -106,7 +106,7 @@ int nextinum() {
             lseek(fd, tptr, SEEK_SET);
             read(fd, &inode, 4);
             if (inode == 0) { //found available
-                printf("Found %i as the next free inum!\r\n",count);
+                //printf("Found %i as the next free inum!\r\n",count);
                 return count;
             }
             tptr += 4; 
@@ -124,7 +124,7 @@ int nextinum() {
 //returns -1 if failed
 //TESTED TODO GOOD
 int creatdirentry(int ptr, char *name) {
-    printf("called creatdirentry looking at ptr: %i to add name %s\r\n",ptr,name);
+    //printf("called creatdirentry looking at ptr: %i to add name %s\r\n",ptr,name);
     int tptr = ptr;
     int limit = ptr + 4096;
     //loop through each entry in block
@@ -132,7 +132,7 @@ int creatdirentry(int ptr, char *name) {
         MFS_DirEnt_t testing;
         lseek(fd, tptr, SEEK_SET);
         read(fd, &testing, 64);
-        printf("checking entry - name: %s inum: %i\r\n",testing.name,testing.inum);
+        //printf("checking entry - name: %s inum: %i\r\n",testing.name,testing.inum);
         if((strcmp(testing.name, name) == 0)&&(testing.inum != -1)) return 1; //found match
         if(testing.inum == -1) { //found free location
             //create and save new entry
@@ -176,29 +176,24 @@ int findentry(int imap, int inode) {
 
 //returns inode struct of inode with inum
 //saved in global var inode_t
+//returns pointer to inode
 int getinode(int inum) {
-    printf("Called getinode!\r\n");
     iptr = NULL;
     int imap = inum / 16;
     int inode = inum % 16;
     int temp;
     int sz = -1;
     int type = -1;
-    printf("Grabbing imap %i and inode %i\r\n",imap,inode);
     lseek(fd, imap + 4, SEEK_SET);
     read(fd, &temp, 4);
-    printf("Read pointer: %i\r\n",temp);
     if (temp == 0) return -1;
     lseek(fd, temp + (inode*4), SEEK_SET);
     read(fd, &temp, 4);
-    printf("Read pointer: %i\r\n",temp);
     if (temp == 0) return -1;
     lseek(fd, temp, SEEK_SET);
     read(fd, &sz, 4);
-    printf("Read inode size: %i\r\n ",sz);
     lseek(fd, temp + 4, SEEK_SET);
     read(fd, &type, 4);
-    printf("Read inode type: %i\r\n ",type);
     lseek(fd, temp + 8, SEEK_SET);
     int td[14];
     read(fd, td, 56);
@@ -206,14 +201,12 @@ int getinode(int inum) {
     inode_t.type = type;
     int i;
     for (i = 0;i < 14;i++) inode_t.data_ptrs[i] = td[i];
-    printf("Complete. Returning valid inode.\r\n");
-    return 0;
+    return temp;
 }
 
 //loads a directory entry from ptr address
 //saved in global var direntry_t
 int getentry(int ptr) {
-    printf("Called getentry!\r\n");
     lseek(fd, ptr, SEEK_SET);
     read(fd, &direntry_t.name, 60);
     lseek(fd, ptr+60, SEEK_SET);

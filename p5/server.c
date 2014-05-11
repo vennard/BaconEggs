@@ -73,12 +73,16 @@ int main(int argc, char *argv[]) {
    if (MFS_Creat_h(0,0,"newdir") != 0) printf("Error with MFS_Creat_h\r\n");
    if (MFS_Creat_h(0,1,"newfile") != 0) printf("Error with MFS_Creat_h\r\n");
    
-   //MFS_Lookup_h(0, "..");
-   //MFS_Stat_h(0);
-   //MFS_Read_h(0, rbuf, 0);
-   //char buf[60];
-   //sprintf(buf, "new data block info");
-   //if (-1 == MFS_Write_h(1, buf, 0)) printf("Failed!\r\n"); //should fail, needs to be called on created inode
+   MFS_Lookup_h(0, "newfile");
+   MFS_Stat_h(0);
+   MFS_Stat_h(1);
+   MFS_Stat_h(2);
+   char out[4096];
+   sprintf(out,"testing, once apon a time I could only try and type things that made sense cuz id been programmign too long");
+   if (MFS_Write_h(2, out, 0) == -1) printf("Error with MFS_write\r\n");
+   if (MFS_Read_h(2, rbuf, 0) == -1) printf("error with MFS_read\r\n");
+   printf("READ BACK FROM READ: %s\r\n",rbuf);
+   //if (MFS_Unlink_h(0, "newfile") == -1) printf("Error with MFS_unlink\r\n");
 
    close(fd);
    return 0;
@@ -117,16 +121,15 @@ int processcommand(int cmd) {
 //Finds the entry matching name in the parent directory pinum
 //returns inode number of name
 int MFS_Lookup_h(int pinum, char *name) {
-    printf("Called MFS_Lookup with pinum %i and name %s !\r\n",pinum,name);
+    printf("MFS_Lookup------ pinum %i name %s\r\n",pinum,name);
     getinode(pinum);
-    printf("Found inode of size %i and type %i and ptr[0] - %i\r\n",inode_t.size,inode_t.type,inode_t.data_ptrs[0]);
     int i = 0;
     int ptr = inode_t.data_ptrs[0];
     while(inode_t.data_ptrs[i] != 0) { //search directory blocks
         getentry(ptr);
         direntry *dp = &direntry_t; 
         while (dp->inum != -1) {
-        printf("Got entry name - %s and inum - %i\r\n",dp->name,dp->inum);
+        //printf("Got entry name - %s and inum - %i\r\n",dp->name,dp->inum);
             if (strcmp(dp->name,name) == 0) {
                 printf("Found a match! Returning inum of match: %i \r\n",dp->inum);
                 return dp->inum;
@@ -153,7 +156,7 @@ int MFS_Init_h() {
 //reuturns 0 on success, -1 on failure
 //saves data in stat
 int MFS_Stat_h(int inum) {
-    printf("Getting stat data about file... ");
+    printf("MFS_Stat called on inum %i... ",inum);
     if (getinode(inum) == -1) return -1; 
     printf(" got inode: size: %i, type %i\r\n",inode_t.size,inode_t.type);
     stat_t.size = inode_t.size;
@@ -161,45 +164,20 @@ int MFS_Stat_h(int inum) {
     return 0;
 }
 
-//write handler, writes buf to block
 int MFS_Write_h(int inum, char *buf, int block) {
-    int eol, blkptr, inodeptr, imapptr, imap, inode;
-    printf("Called MFS_Write...");
-    if (getinode(inum) == -1) return -1; //fail on invalid inum
-    if (inode_t.type != 1) return -1; //fail on not regular file
-    if ((block < 0)||(block > 13)) return -1; //fail on invalid block
-    //get end of log
-    eol = geteol();
-    printf(" got eol = %i\r\n",eol);
-    //write new data block
-    blkptr = eol; 
-    eol = writeblock(eol, buf, 4096); 
-    //write new inode after updating with new block ptr
-    inodeptr = eol;
-    inode_t.data_ptrs[block] = blkptr; 
-    eol = writeblock(eol, (char*)&inode_t, 64);
-    printf("new inode saved at %i and new imap block saved at %i\r\n",inodeptr,eol);
-    //write new imap piece after updating with new ptr
-    imap = inum / 16;
-    inode = inum % 16;
-    imapptr = eol;
-    char *ptr = readblock(4 + (imap*4), 4); //get old imap loc
-    int offset = (int)*ptr;
-    ptr = readblock(offset, 64); //read old imap
-    int imaps[16];
-    int i;
-    for(i = 0;i < 16;i++) {
-        imaps[i] = (int)*ptr;
-        ptr += 4;
-    } //TODO left off here
-    imaps[inode] = inodeptr; //set new ptr 
-    imapptr = eol;
-    eol = writeblock(eol, (char*)imaps, 64); //write out 
-    //then update checkregion ptr and eol
-    writeblock(4+(imap*4), (char*)&imapptr, 4);
-    writeblock(0, (char*)&eol, 4);
-    callfsync();
-    return 0;
+   int inodeptr = getinode(inum);
+   if (inodeptr == -1) return -1; //fail on invalid inum
+   if (inode_t.type != 1) return -1; //fail on not regular file
+   if ((block < 0)||(block > 13)) return -1; //fail on invalid block
+   int eol = geteol();
+   int blkptr = eol;
+   eol = writeblock(eol, buf, 4096); 
+   inode_t.data_ptrs[block] = blkptr;
+   inode_t.size += 4096;
+   writeblock(inodeptr, &inode_t, 64);
+   callfsync();
+   printf("called and completed MFS_Write\r\n");
+   return 0;
 }
 
 //reads data from inode with inum at block
@@ -296,7 +274,38 @@ int MFS_Creat_h(int pinum, int type, char *name) {
 }
 
 //removes file or directory from pinum directory
+//TODO increase sizes correctly
 int MFS_Unlink_h(int pinum, char *name) {
+   if (getinode(pinum) == -1) return -1; //fail on invalid pinum
+   //check to see if directory is empty
+   void *ptr;
+   MFS_DirEnt_t *entry;
+   ptr = readblock(inode_t.data_ptrs[0], 64*3);
+   entry = (MFS_DirEnt_t *)ptr;
+   printf("MFS_Unlink ---- read 3 dir entrys inums: %i %i %i\r\n",entry[0].inum,entry[1].inum,entry[2].inum);
+   if (entry[2].inum != -1) {
+      printf("Error directory is not empty!\r\n");
+      return -1;
+   }
+   //Look through all entries for name
+   int i = 0;
+   while (inode_t.data_ptrs[i] != 0) {
+      ptr = readblock(inode_t.data_ptrs[i], 4096);
+      entry = (MFS_DirEnt_t *)ptr;
+      int k = 0;
+      while(entry[k].inum != -1) { //TODO CHANGE TO SEARCH THROUGH ALL ENTRIES EVERY TIME!!!
+         if(strcmp(entry[k].name, name) == 0) {
+            printf("Found entry to unlink: %s %i\r\n",entry[k].name,entry[k].inum);
+            //unlink file or directory
+            entry[k].inum = -1;
+            sprintf(entry[k].name," ");
+            writeblock(inode_t.data_ptrs[i], entry, 4096);
+            return 0;
+         } 
+         k++;
+      }
+     i++; 
+   }
    return 0;
 }
 
