@@ -70,7 +70,8 @@ int main(int argc, char *argv[]) {
    if (fd < 0) startfs(filesystem);
 
    printf("Starting testing...\r\n");
-   //if (MFS_Creat_h(0,1,"newfile.txt") != 0) printf("Error with MFS_Creat_h\r\n");
+   if (MFS_Creat_h(0,0,"newdir") != 0) printf("Error with MFS_Creat_h\r\n");
+   
    //MFS_Lookup_h(0, "..");
    //MFS_Stat_h(0);
    //MFS_Read_h(0, rbuf, 0);
@@ -244,30 +245,45 @@ int MFS_Creat_h(int pinum, int type, char *name) {
                 //create base entries . and ..
                 temp.data_ptrs[0] = eol;
                 MFS_DirEnt_t block[64];
-                sprintf(block[1].name, ".");
-                block[1].inum = newinum;
                 sprintf(block[0].name, "..");
                 block[0].inum = pinum;
+                sprintf(block[1].name, ".");
+                block[1].inum = newinum;
                 eol = writeblock(eol, block, 4096);
+                printf("data block saved at %i: entry 1: . %i entry 2: .. %i\r\n",temp.data_ptrs[0],newinum, pinum); 
             }
             if (type == 1) temp.size = 0; //files start empty
             //write new inode
             inodeptr = eol;
             eol = writeblock(eol, &temp, 64);
+            void *ptr;
+            inode *chk;
+            ptr = readblock(inodeptr, 64);
+            chk = (inode*) ptr;
+            printf("Read back inode at %i: size - %i, type %i, ptr[0] - %i\r\n",inodeptr, chk->size, chk->type, chk->data_ptrs[0]);
             //read old imap region
-            char *imap;
-            char *p;
-            p = readblock(4 + (4*(newinum / 16)), 4);
-            int imapptr = (int)*p;
+            int *imap;
+            void *p;
+            int imap_loc = 4 + (4 * (newinum / 16));
+            p = readblock(imap_loc, 4);
+            int *tpt = (int*)p;
+            int x = *tpt;
+      printf("reading block at %i got %i\r\n",imap_loc,x);  
+            //int imapptr = (int)*p;
+            int imapptr = x;
             if (imapptr < 1) return -1;
-            imap = readblock(imapptr, 64);
+            p = readblock(imapptr, 64);
+            imap = (int *)p;
             imap[newinum % 16] = inodeptr;
+         printf("trying to access imap[%i] and saving inodeptr %i there. Check is %i\r\n",newinum % 16, inodeptr, imap[newinum%16]);
             //write new imap
             int newimap = eol;
             eol = writeblock(eol, imap, 64);
+      printf("just wrote new imap block at %i: first pointer %i! second pointer %i\r\n",newimap, imap[0], imap[1]);
             //update check region (eol and ptr)
             writeblock(4 + (4*(newinum /16)), &newimap, 4);
             writeblock(0, &eol, 4);
+            printf("saving newimap region pointer %i in checkregion location %i, eol is updated to %i\r\n",newimap,4+(4*(newinum/16)),eol);
             callfsync();
             return 0;
         }

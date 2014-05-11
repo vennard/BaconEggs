@@ -122,19 +122,16 @@ int nextinum() {
 //returns 0 if found matching name
 //returns ptr to where new inum should be saved if successfully inserted new entry
 //returns -1 if failed
+//TESTED TODO GOOD
 int creatdirentry(int ptr, char *name) {
     printf("called creatdirentry looking at ptr: %i to add name %s\r\n",ptr,name);
     int tptr = ptr;
     int limit = ptr + 4096;
     //loop through each entry in block
     while (tptr < limit) {
-        //TODO testing
         MFS_DirEnt_t testing;
         lseek(fd, tptr, SEEK_SET);
         read(fd, &testing, 64);
-        //read(fd, tname, 60);
-        //lseek(fd, tptr+60, 4); 
-        //read(fd, &tnum, 4);
         printf("checking entry - name: %s inum: %i\r\n",testing.name,testing.inum);
         if((strcmp(testing.name, name) == 0)&&(testing.inum != -1)) return 1; //found match
         if(testing.inum == -1) { //found free location
