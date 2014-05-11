@@ -69,10 +69,10 @@ void startfs(char* filesystem) {
 
    //4KB directory block -- filling in -1 to invalid inums
    int pt = 1028 + (64 * 4);
-   inum = -1;
+   int neg = -1;
    for (i = 2;i < 64;i++) {
       lseek(fd, pt + 60, SEEK_SET); 
-      write(fd, &inum, 4);
+      write(fd, &neg, 4);
       pt += 64;
    }
 
@@ -123,16 +123,22 @@ int nextinum() {
 //returns ptr to where new inum should be saved if successfully inserted new entry
 //returns -1 if failed
 int creatdirentry(int ptr, char *name) {
+    printf("called creatdirentry looking at ptr: %i to add name %s\r\n",ptr,name);
     int tptr = ptr;
     int limit = ptr + 4096;
-    int tnum = 0;
+    int tnum;
     char tname[60];
-    lseek(fd, ptr, SEEK_SET);
     //loop through each entry in block
     while (tptr < limit) {
-        read(fd, tname, 60);
-        lseek(fd, tptr+60, 4); 
-        read(fd, &tnum, 4);
+        //TODO testing
+        MFS_DirEnt_t testing;
+        lseek(fd, tptr, SEEK_SET);
+        read(fd, &testing, 64);
+        tnum = testing.inum;
+        //read(fd, tname, 60);
+        //lseek(fd, tptr+60, 4); 
+        //read(fd, &tnum, 4);
+        printf("checking entry - name: %s inum: %i\r\n",testing.name,tnum);
         if((strcmp(tname, name) == 0)&&(tnum != -1)) return 1; //found match
         if(tnum == -1) { //found free location
             //create and save new entry
@@ -141,7 +147,6 @@ int creatdirentry(int ptr, char *name) {
             return tptr+60;
         }
         tptr += 64;
-        lseek(fd, tptr, SEEK_SET);
     }
     return -1; //block is full
 }
@@ -207,6 +212,7 @@ int getinode(int inum) {
     inode_t.type = type;
     int i;
     for (i = 0;i < 14;i++) inode_t.data_ptrs[i] = td[i];
+    printf("Complete. Returning valid inode.\r\n");
     return 0;
 }
 
@@ -238,7 +244,7 @@ void seteol(int eol) {
 
 //writes data block of size bytes at location
 //returns ptr to end of new location
-int writeblock(int loc, char *buf, int size) {
+int writeblock(int loc, void *buf, int size) {
     lseek(fd, loc, SEEK_SET);
     write(fd, buf, size);
     return loc + size;

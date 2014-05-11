@@ -50,7 +50,7 @@ extern char rbuf[4096];
 
 //server utility functions
 void startfs(char* filesystem);
-int writeblock(int loc, char *buf, int size);
+int writeblock(int loc, void *buf, int size);
 char* readblock(int loc, int size);
 int getentry(int ptr);
 int getinode(int inum);

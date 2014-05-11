@@ -70,12 +70,13 @@ int main(int argc, char *argv[]) {
    if (fd < 0) startfs(filesystem);
 
    printf("Starting testing...\r\n");
+   if (MFS_Creat_h(0,1,"newfile.txt") != 0) printf("Error with MFS_Creat_h\r\n");
    //MFS_Lookup_h(0, "..");
    //MFS_Stat_h(0);
    //MFS_Read_h(0, rbuf, 0);
-   char buf[60];
-   sprintf(buf, "new data block info");
-   if (-1 == MFS_Write_h(1, buf, 0)) printf("Failed!\r\n"); //should fail, needs to be called on created inode
+   //char buf[60];
+   //sprintf(buf, "new data block info");
+   //if (-1 == MFS_Write_h(1, buf, 0)) printf("Failed!\r\n"); //should fail, needs to be called on created inode
 
    close(fd);
    return 0;
@@ -213,6 +214,7 @@ int MFS_Read_h(int inum, char *buffer, int block) {
 int MFS_Creat_h(int pinum, int type, char *name) {
     printf("Called MFS_Creat_h...");    
     if (getinode(pinum) == -1) return -1; //fail on bad pinum
+    printf("inode_t: type: %i, size: %i, ptr[0]: %i\r\n",inode_t.type,inode_t.size,inode_t.data_ptrs[0]);
     if (inode_t.type != 0) return -1; //inum not directory
     if ((type < 0)||(type > 1)) return -1; //invalid type
     if (strlen(name) > 60) return -1; //name too long
@@ -221,6 +223,7 @@ int MFS_Creat_h(int pinum, int type, char *name) {
     while (inode_t.data_ptrs[i] != 0) {
         //search through data blocks for free location
         int check = creatdirentry(inode_t.data_ptrs[i], name);
+        printf("creatdirentry returned: %i\r\n",check);
         if (check == -1) i++; //block full, check next block
         if (check == 0) return 0; //found matching name, success
         if (check > 0) { //check is ptr to loc to save new inum
@@ -229,19 +232,44 @@ int MFS_Creat_h(int pinum, int type, char *name) {
             temp.type = type;
             //find free inode number
             int newinum = nextinum();
+            printf("new inum is: %i!\r\n",newinum);
+            writeblock(check, &newinum, 4); //write new inum to directory entry
             if (newinum == -1) return -1;
             //write new inode
+            int inodeptr;
+            int eol = geteol();
             if (type == 0) {
                 temp.size = 4096; //dir start with allocated block
                 //create base entries . and ..
-                //TODO left off here
+                temp.data_ptrs[0] = eol;
+                MFS_DirEnt_t block[64];
+                sprintf(block[1].name, ".");
+                block[1].inum = newinum;
+                sprintf(block[0].name, "..");
+                block[0].inum = pinum;
+                eol = writeblock(eol, block, 4096);
             }
             if (type == 1) temp.size = 0; //files start empty
-            //write new imap region
-            //write new ptr in checkregion
-
+            //write new inode
+            inodeptr = eol;
+            eol = writeblock(eol, &temp, 64);
+            //read old imap region
+            char *imap;
+            char *p;
+            p = readblock(4 + (4*(newinum / 16)), 4);
+            int imapptr = (int)*p;
+            if (imapptr < 1) return -1;
+            imap = readblock(imapptr, 64);
+            imap[newinum % 16] = inodeptr;
+            //write new imap
+            int newimap = eol;
+            eol = writeblock(eol, imap, 64);
+            //update check region (eol and ptr)
+            writeblock(4 + (4*(newinum /16)), &newimap, 4);
+            writeblock(0, &eol, 4);
+            return 0;
         }
     }
-    return 0;
+    return -1; //must be full directory or something weird
 }
 
