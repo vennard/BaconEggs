@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "udp.h"
+#include "mfs.h"
 
 #define BUFFER_SIZE (4096)
 #define TIMEOUT (5)
