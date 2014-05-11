@@ -1,4 +1,5 @@
 #include "udp.h"
+#include "mfs.h"
 
 // create a socket and bind it to a port on the current machine
 // used to listen for incoming packets

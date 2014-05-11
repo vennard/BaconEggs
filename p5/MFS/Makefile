@@ -1,23 +1,29 @@
 FLAGS_L = -c -fpic
 FLAGS_S = -shared -o 
-FLAGS_R = -lmem -L. -o
+FLAGS_R = -lmfs -L. -o
 #FLAG_SHOW_ERROR = -Wall -Werror
 
 HEADERS = mfs.h udp.h
 
-all: mfs.o libmfs.so client
+all: mfs.o udp.o libmfs.so client server
 
 mfs.o: mfs.c $(HEADERS)
 	gcc $(FLAGS_L) mfs.c $(FLAG_SHOW_ERROR)
 
-libmfs.so: mfs.o udp.o
-	gcc $(FLAGS_S) libmfs.so mfs.o udp.o 
+udp.o: udp.c $(HEADERS)
+	gcc $(FLAGS_L) udp.c $(FLAG_SHOW_ERROR)
 
-client: client.c
-	gcc $(FLAGS_R) client client.c $(FLAG_SHOW_ERROR)
+libmfs.so: mfs.o 
+	gcc $(FLAGS_S) libmfs.so mfs.o  
+
+client: client.c 
+	gcc $(FLAGS_R) client client.c udp.o $(FLAG_SHOW_ERROR)
+
+server: server.c
+	gcc $(FLAGS_R) server server.c udp.o $(FLAG_SHOW_ERROR)
 
 clean:
-	-rm -f mfs.o client libmfs.so udp.o
+	-rm -f mfs.o client server server.o libmfs.so udp.o
 
 run: client
 	./client
