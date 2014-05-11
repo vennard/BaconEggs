@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
    if (MFS_Write_h(2, out, 0) == -1) printf("Error with MFS_write\r\n");
    if (MFS_Read_h(2, rbuf, 0) == -1) printf("error with MFS_read\r\n");
    printf("READ BACK FROM READ: %s\r\n",rbuf);
-   //if (MFS_Unlink_h(0, "newfile") == -1) printf("Error with MFS_unlink\r\n");
+   if (MFS_Unlink_h(0, "newdir") == -1) printf("Error with MFS_unlink\r\n");
 
    close(fd);
    return 0;
@@ -276,30 +276,40 @@ int MFS_Creat_h(int pinum, int type, char *name) {
 //removes file or directory from pinum directory
 //TODO increase sizes correctly
 int MFS_Unlink_h(int pinum, char *name) {
-   if (getinode(pinum) == -1) return -1; //fail on invalid pinum
-   //check to see if directory is empty
    void *ptr;
    MFS_DirEnt_t *entry;
-   ptr = readblock(inode_t.data_ptrs[0], 64*3);
-   entry = (MFS_DirEnt_t *)ptr;
-   printf("MFS_Unlink ---- read 3 dir entrys inums: %i %i %i\r\n",entry[0].inum,entry[1].inum,entry[2].inum);
-   if (entry[2].inum != -1) {
-      printf("Error directory is not empty!\r\n");
-      return -1;
-   }
+   int pinum_ptr = getinode(pinum);
+   if (pinum_ptr == -1) return -1; //fail on invalid pinum
    //Look through all entries for name
    int i = 0;
    while (inode_t.data_ptrs[i] != 0) {
       ptr = readblock(inode_t.data_ptrs[i], 4096);
       entry = (MFS_DirEnt_t *)ptr;
       int k = 0;
-      while(entry[k].inum != -1) { //TODO CHANGE TO SEARCH THROUGH ALL ENTRIES EVERY TIME!!!
+      while(entry[k].inum != -1) { 
          if(strcmp(entry[k].name, name) == 0) {
             printf("Found entry to unlink: %s %i\r\n",entry[k].name,entry[k].inum);
+            //check to see if it is a directory and if its empty
+            if (getinode(entry[k].inum) == -1) return -1;
+            if (inode_t.type == 0) { //it is a directory
+               ptr = readblock(inode_t.data_ptrs[0], 64*3);
+               entry = (MFS_DirEnt_t *)ptr;
+               printf("MFS_Unlink ---- read 3 dir entrys inums: %i %i %i\r\n",entry[0].inum,entry[1].inum,entry[2].inum);
+               if (entry[2].inum != -1) {
+                  printf("Error directory is not empty!\r\n");
+                  return -1;
+               }
+            }
             //unlink file or directory
             entry[k].inum = -1;
             sprintf(entry[k].name," ");
-            writeblock(inode_t.data_ptrs[i], entry, 4096);
+            int j = 0;
+            for (j = k;j < 63;j++) entry[j] = entry[j+1]; //shift down 
+            entry[64].inum = -1;
+            ptr = readblock(pinum_ptr, 64);
+            inode *ipt = (inode*) ptr;
+            writeblock(ipt->data_ptrs[i], entry, 4096);
+            callfsync();  
             return 0;
          } 
          k++;
