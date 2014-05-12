@@ -5,19 +5,19 @@ FLAGS_R = -lmfs -L. -o
 
 HEADERS = mfs.h udp.h
 
-all: server_utils.o mfs.o udp.o libmfs.so client server
+all: server_utils.o udp.o mfs.o libmfs.so client server
 
 server_utils.o: server_utils.c $(HEADERS)
 	gcc $(FLAGS_L) server_utils.c $(FLAG_SHOW_ERROR)
 
-mfs.o: mfs.c $(HEADERS)
-	gcc $(FLAGS_L) mfs.c $(FLAG_SHOW_ERROR)
-
 udp.o: udp.c $(HEADERS)
 	gcc $(FLAGS_L) udp.c $(FLAG_SHOW_ERROR)
 
+mfs.o: mfs.c $(HEADERS)
+	gcc $(FLAGS_L) mfs.c udp.o $(FLAG_SHOW_ERROR)
+
 libmfs.so: mfs.o 
-	gcc $(FLAGS_S) libmfs.so mfs.o  
+	gcc $(FLAGS_S) libmfs.so mfs.o udp.o  
 
 client: test.c 
 	gcc $(FLAGS_R) client test.c udp.o $(FLAG_SHOW_ERROR)
