@@ -50,11 +50,12 @@ int sendpacket(char message[BUFFER_SIZE]){
 //CANNOT USE FULL BUFFER
 //DATA WILL BE STORED AT THE LAST 3 BYTES OF THE BUFFER
 int transmit(char message[BUFFER_SIZE]) {
+    if (DEBUG) printf("USING THIS OLD TRANSMIT!!!! WAHH\r\n");
     time_t tstart,tnow;
     int ackd = 0;
-    message[BUFFER_SIZE-3] = messageid;
-    message[BUFFER_SIZE-2] = 'k';
-    message[BUFFER_SIZE-1] = 'z'; //watch for this key TODO remove
+    //message[BUFFER_SIZE-3] = messageid;
+    //message[BUFFER_SIZE-2] = 'k';
+    //message[BUFFER_SIZE-1] = 'z'; //watch for this key TODO remove
     while (!ackd) {
         tstart = time(NULL);
         rc = UDP_FillSockAddr(&saddr, "best-mumble.cs.wisc.edu", 10021);
@@ -76,7 +77,7 @@ int transmit(char message[BUFFER_SIZE]) {
             }
         }
     }
-    messageid++; //increment AFTER sending message
+    messageid++; //increment AFTER getting valid ack
     return 0;
 }
 

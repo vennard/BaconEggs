@@ -31,7 +31,7 @@ int MFS_Init(char *hostname, int port)
     if (DEBUG) printf("MFS_Init called with hostname %s and port %d.\n", hostname, port);
 
     //INIT VARIABLES
-    messageid = 0; //start the messageid count
+    //messageid = 0; //start the messageid count
 
     //PRIMATIVE CHECKS
     if (port < 0 || hostname == NULL){
@@ -291,6 +291,7 @@ int MFS_Shutdown()
     //SEND PACKET
     transmit();
 
+    messageid = 0;
     //VERIFY PACKET CONTENTS
     if (response[CMD_INT2] < 0)
     {        
@@ -313,6 +314,7 @@ int transmit() //send buffer[], receive response[]
     {
         tstart = time(NULL);
         sendpacket();
+        messageid = (messageid + 1) % 255; //TODO messing here
         timeout = 0;
         while(!timeout)
         {
@@ -320,19 +322,21 @@ int transmit() //send buffer[], receive response[]
             tnow = time(NULL);
             if (rx >= 0)// && 0 == verify())
             {
-                if (DEBUG) printf("Server acknowledged request. It's response was valid.\n");;
+                if ((response[KEY_BYTE] == 'k')&&(response[MESSAGE_ID] == messageid)) {
+                   if (DEBUG) printf("Server acknowledged request. It's VALID.\n");;
                 ackd = 1;
                 timeout = 1;
+                }
             }
             diff = difftime(tnow, tstart);
             if (diff > TIMEOUT)
             {
                 if (DEBUG) printf("Client has no received server response, timed out. Resending.\n");
                 timeout = 1;
+               messageid--; //TODO will not work for rollover
             }
         }//while !timeout
     }//while !ackd
-    messageid = (messageid + 1) % 255; //update, only 1 byte large
     return 0;
 }
 

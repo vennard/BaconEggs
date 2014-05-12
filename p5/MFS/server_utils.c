@@ -16,7 +16,7 @@ char rbuf[4096];
 void startfs(char* filesystem) {
    int i;
    if (DEBUG) printf("Creating new filesystem... ");
-   fd = open(filesystem, O_RDWR | O_CREAT);
+   fd = open(filesystem, O_RDWR | O_CREAT, 0666);
    if (fd < 0) printf("Failed to create new filesystem!\r\n");
 
    //write check region imap ptrs 

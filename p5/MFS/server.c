@@ -57,7 +57,8 @@ void receiving(int portnum) {
                 if (DEBUG) printf("SERVER processing unique message (%d bytes)!\r\n",rc);
             } else { //send dumb ack
                reply[COMMAND_BYTE] = buffer[COMMAND_BYTE];   
-               reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+               reply[MESSAGE_ID] = messagecount; //TODO messing here 
+               //reply[MESSAGE_ID] = buffer[MESSAGE_ID];
                reply[KEY_BYTE] = 'k';
                //memcpy(&reply[CMD_INT1], ackd, 4);
                reply[CMD_INT2] = 0; //return val
@@ -88,8 +89,17 @@ int main(int argc, char *argv[]) {
 
    
    //try and open filesystem -- if it doesn't exist create a new one
-   fd = open(filesystem, O_RDWR);
+   fd = open(filesystem, O_RDWR, 666);
+   if (fd >= 0) {
+      if (DEBUG) printf("Opened existing filesystem: %s!\r\n",filesystem);
+   }
    if (fd < 0) startfs(filesystem);
+
+   //change permissions on file
+   //char str[64];
+   //sprintf(str, "chmod a+wr %s", filesystem);
+   //system(str);
+   
 
    receiving(portnum);
    return 0;
@@ -112,9 +122,9 @@ int processcommand(int cmd) {
             if (retval == -1) {
                 for(i = 0;i < 4096;i++)reply[i] = clear;  
                 reply[KEY_BYTE] = 'k';
-                reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+                reply[MESSAGE_ID] = messagecount;
                 reply[COMMAND_BYTE] = 1;
-                reply[CMD_INT1] = 0;
+                reply[CMD_INT1] = -1;
                 reply[CMD_INT2] = -1;
                 if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
 	             rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
@@ -126,7 +136,7 @@ int processcommand(int cmd) {
             //send response
             memcpy(reply, &stat_t, sizeof(stat_t));
             reply[KEY_BYTE] = 'k';
-            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[MESSAGE_ID] = messagecount;
             reply[COMMAND_BYTE] = 2;
             //memcpy(&reply[CMD_INT1],bf,4);  
             reply[CMD_INT2] = retval;
@@ -138,7 +148,7 @@ int processcommand(int cmd) {
             for(i = 0;i < 4096;i++)reply[i] = clear;  
             //send response
             reply[KEY_BYTE] = 'k';
-            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[MESSAGE_ID] = messagecount;
             reply[COMMAND_BYTE] = 3;
             //memcpy(&reply[CMD_INT1],bf,4);  
             reply[CMD_INT2] = retval;
@@ -150,7 +160,7 @@ int processcommand(int cmd) {
             for(i = 0;i < 4096;i++)reply[i] = clear;  
             memcpy(reply,rbuf,4096);
             reply[KEY_BYTE] = 'k';
-            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[MESSAGE_ID] = messagecount;
             reply[COMMAND_BYTE] = 4;
             //memcpy(&reply[CMD_INT1],bf,4);  
             reply[CMD_INT2] = retval;
@@ -162,7 +172,7 @@ int processcommand(int cmd) {
             if (DEBUG)printf("Calling MFS_Creat handler!\r\n");
             for(i = 0;i < 4096;i++)reply[i] = clear;  
             reply[KEY_BYTE] = 'k';
-            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[MESSAGE_ID] = messagecount;
             reply[COMMAND_BYTE] = 5;
             //memcpy(&reply[CMD_INT1],bf,4);  
           //  sprintf(&reply[CMD_INT1],bf);
@@ -175,7 +185,7 @@ int processcommand(int cmd) {
             for(i = 0;i < 4096;i++)reply[i] = clear;  
             reply[CMD_INT2] = retval;
             reply[KEY_BYTE] = 'k';
-            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[MESSAGE_ID] = messagecount;
             reply[COMMAND_BYTE] = 6;
             reply[CMD_INT2] = retval;
                 if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
@@ -188,7 +198,7 @@ int processcommand(int cmd) {
         default: //send failed response
             for(i = 0;i < 4096;i++)reply[i] = clear;  
             reply[KEY_BYTE] = 'k';
-            reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+            reply[MESSAGE_ID] = messagecount;
             reply[COMMAND_BYTE] = -1;
             reply[CMD_INT2] = -1;
                 if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
@@ -203,7 +213,7 @@ int processcommand(int cmd) {
 //Finds the entry matching name in the parent directory pinum
 //returns inode number of name
 int MFS_Lookup_h(int pinum, char *name) {
-    if (DEBUG) printf("MFS_Lookup(%i, %s): ",pinum,name);
+    if (DEBUG) printf("\r\n-------------- MFS_Lookup(%i, %s): ",pinum,name);
     getinode(pinum);
     int i = 0;
     int ptr = inode_t.data_ptrs[0];
@@ -215,7 +225,7 @@ int MFS_Lookup_h(int pinum, char *name) {
                 if (DEBUG) printf("Found entry! return inum %i \r\n",dp->inum);
                 //Send reply
                 reply[KEY_BYTE] = 'k';
-                reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+                reply[MESSAGE_ID] = messagecount;
                 reply[COMMAND_BYTE] = 1;
                 reply[CMD_INT2] = dp->inum; //
                 reply[CMD_INT1] = 0;
@@ -237,9 +247,9 @@ int MFS_Lookup_h(int pinum, char *name) {
 
 //Takes host name and port number 
 int MFS_Init_h() {
-    if (DEBUG) printf("MFS_Init: called!\r\n");
+    if (DEBUG) printf("\r\n---------------MFS_Init: called!\r\n");
     reply[COMMAND_BYTE] = buffer[COMMAND_BYTE];   
-    reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+    reply[MESSAGE_ID] = messagecount;
     reply[KEY_BYTE] = 'k';
     reply[CMD_INT2] = 0; //return val
                 if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
@@ -251,7 +261,7 @@ int MFS_Init_h() {
 //reuturns 0 on success, -1 on failure
 //saves data in stat
 int MFS_Stat_h(int inum) {
-    if (DEBUG) printf("MFS_Stat(%i): ",inum);
+    if (DEBUG) printf("\r\n-------------MFS_Stat(%i): ",inum);
     if (getinode(inum) == -1) return -1; 
     if (DEBUG) printf("found inode size: %i, type %i\r\n",inode_t.size,inode_t.type);
     stat_t.size = inode_t.size;
@@ -267,6 +277,42 @@ int MFS_Write_h(int inum, char *buf, int block) {
    if ((block < 0)||(block > 13)) return -1; //fail on invalid block
    int eol = geteol();
    inode_t.data_ptrs[block] = eol;
+   eol = writeblock(eol, buf, 4096);
+
+   //SIZE THINGS
+   int blockcount = 0;
+   int lowblock = -1;
+   int highblock = -1;
+   int set = 0;
+   int i;
+   for (i = 0; i < 14; i++){
+      if(inode_t.data_ptrs[i] != 0){
+         if(set == 0){
+            lowblock = i;
+            set = 1;
+         }
+         blockcount++;
+         highblock = i;
+      }
+   }
+   //(blockcount*4096) ((highblock+1-lowblock)*4096)
+   inode_t.size = ((highblock+1-lowblock)*4096);
+
+   writeblock(inodeptr, &inode_t, 64);
+   callfsync();
+   if (DEBUG) printf("saved new block to %i and increased inode size to %i\r\n",inode_t.data_ptrs[block],inode_t.size);
+   return 0;
+}
+
+/*
+int MFS_Write_h(int inum, char *buf, int block) {
+   if (DEBUG) printf("\r\n--------------MFS_Write(%i, %s, %i): ",inum,buf,block);
+   int inodeptr = getinode(inum);
+   if (inodeptr == -1) return -1; //fail on invalid inum
+   if (inode_t.type != 1) return -1; //fail on not regular file
+   if ((block < 0)||(block > 13)) return -1; //fail on invalid block
+   int eol = geteol();
+   inode_t.data_ptrs[block] = eol;
    eol = writeblock(eol, buf, 4096); 
    inode_t.size += 4096;
    writeblock(inodeptr, &inode_t, 64);
@@ -274,11 +320,12 @@ int MFS_Write_h(int inum, char *buf, int block) {
    if (DEBUG) printf("saved new block to %i and increased inode size to %i\r\n",inode_t.data_ptrs[block],inode_t.size);
    return 0;
 }
+*/
 
 //reads data from inode with inum at block
 //saves data at buffer
 int MFS_Read_h(int inum, char *buffer, int block) {
-    if (DEBUG) printf("MFS_Read(%i, buffer, %i): ",inum,block);
+    if (DEBUG) printf("\r\n------------MFS_Read(%i, buffer, %i): ",inum,block);
     if (getinode(inum) == -1) return -1; //fails on invalid inum
     if ((block < 0)||(block > 13)||(inode_t.data_ptrs[block] == 0)) return -1; //fail on invalid block
     buffer = readblock(inode_t.data_ptrs[block], 4096);
@@ -288,7 +335,7 @@ int MFS_Read_h(int inum, char *buffer, int block) {
 
 //creates new file or directory in the parent directory pinum
 int MFS_Creat_h(int pinum, int type, char *name) {
-    if (DEBUG) printf("MFS_Creat(%i, %i, %s): ",pinum,type,name);    
+    if (DEBUG) printf("\r\n-----------------MFS_Creat(%i, %i, %s): ",pinum,type,name);    
     int inodeptr = getinode(pinum);
     if (inodeptr == -1) return -1; //fail on bad pinum
     if (DEBUG) printf("parent inode - type: %i, size: %i, ptr[0]: %i.   ",inode_t.type,inode_t.size,inode_t.data_ptrs[0]);
@@ -383,7 +430,7 @@ int MFS_Creat_h(int pinum, int type, char *name) {
 
 //removes file or directory from pinum directory
 int MFS_Unlink_h(int pinum, char *name) {
-   if (DEBUG) printf("MFS_Unlink: ");
+   if (DEBUG) printf("\r\n--------------MFS_Unlink: ");
    void *ptr;
    MFS_DirEnt_t *entry;
    int pinum_ptr = getinode(pinum);
@@ -428,9 +475,9 @@ int MFS_Unlink_h(int pinum, char *name) {
 }
 
 int MFS_Shutdown_h() {
-   if (DEBUG) printf("MFS_Shutdown: exiting...\r\n");
+   if (DEBUG) printf("\r\n-------------MFS_Shutdown: exiting...\r\n");
    reply[KEY_BYTE] = 'k';
-   reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+   reply[MESSAGE_ID] = messagecount;
    reply[COMMAND_BYTE] = 7;
    char bf[4];
    sprintf(bf,"ackd");
