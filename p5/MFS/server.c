@@ -39,8 +39,8 @@ int MFS_Shutdown_h();
 int processcommand(int cmd);
 
 //loop waiting for data to be recieved
-void receiving() {
-    sd = UDP_Open(10021);
+void receiving(int portnum) {
+    sd = UDP_Open(portnum);
     assert(sd > -1);
     printf("SERVER: About to enter receiver waiting loop!\r\n");
     while (1) {
@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
    fd = open(filesystem, O_RDWR);
    if (fd < 0) startfs(filesystem);
 
-   receiving();
+   receiving(portnum);
 
    printf("Starting testing...\r\n");
    if (MFS_Creat_h(0,0,"newdir") != 0) printf("Error with MFS_Creat_h\r\n");
