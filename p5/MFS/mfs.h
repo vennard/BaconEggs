@@ -26,10 +26,40 @@ int MFS_Read(int inum, char *buffer, int block);
 int MFS_Creat(int pinum, int type, char *name);
 int MFS_Unlink(int pinum, char *name);
 int MFS_Shutdown();
-int verify();
-int receive();
-int transmit();
-int sendpacket();
+int verify(void);
+int receive(void);
+int transmit(void);
+int sendpacket(void);
+
+//server utility structs
+typedef struct inode {
+    int size;
+    int type;
+    int data_ptrs[14];
+} inode;
+extern inode inode_t;
+
+typedef struct direntry {
+    char name[60];
+    int inum;
+} direntry;
+extern direntry direntry_t;
+
+//server global vars
+extern char rbuf[4096];
+
+//server utility functions
+void startfs(char* filesystem);
+int writeblock(int loc, void *buf, int size);
+char* readblock(int loc, int size);
+int getentry(int ptr);
+int getinode(int inum);
+void seteol(int eol);
+int geteol(void);
+int creatdirentry(int ptr, char *name);
+int nextinum(void);
+void callfsync(void);
+void shutdownfs(void);
 
 #endif // __MFS_h__
 
