@@ -56,6 +56,7 @@ void receiving(int portnum) {
                 processcommand(buffer[COMMAND_BYTE]);
                 if (DEBUG) printf("SERVER processing unique message (%d bytes)!\r\n",rc);
             } else { //send dumb ack
+               if (DEBUG) printf("SERVER: Sent dump ack\r\n");
                reply[COMMAND_BYTE] = buffer[COMMAND_BYTE];   
                reply[MESSAGE_ID] = messagecount; //TODO messing here 
                //reply[MESSAGE_ID] = buffer[MESSAGE_ID];
@@ -152,7 +153,7 @@ int processcommand(int cmd) {
             reply[COMMAND_BYTE] = 3;
             //memcpy(&reply[CMD_INT1],bf,4);  
             reply[CMD_INT2] = retval;
-                if (DEBUG) printf("RESPONSE: CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
+            if (DEBUG) printf("RESPONSE: CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
 	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             break;
         case 4: //MFS_Read
@@ -270,7 +271,7 @@ int MFS_Stat_h(int inum) {
 }
 
 int MFS_Write_h(int inum, char *buf, int block) {
-   if (DEBUG) printf("MFS_Write(%i, %s, %i): ",inum,buf,block);
+   if (DEBUG) printf("\r\n--------------MFS_Write(%i, %s, %i): ",inum,buf,block);
    int inodeptr = getinode(inum);
    if (inodeptr == -1) return -1; //fail on invalid inum
    if (inode_t.type != 1) return -1; //fail on not regular file
@@ -278,6 +279,10 @@ int MFS_Write_h(int inum, char *buf, int block) {
    int eol = geteol();
    inode_t.data_ptrs[block] = eol;
    eol = writeblock(eol, buf, 4096);
+   //SET NEW EOL!!!
+   seteol(eol);
+   int j;
+   for (j = 0;j < 14;j++) if (DEBUG) printf("Ptr %i: %i  -",j,inode_t.data_ptrs[j]);
 
    //SIZE THINGS
    int blockcount = 0;

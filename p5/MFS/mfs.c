@@ -305,6 +305,7 @@ int MFS_Shutdown()
 //SENDS A PACKET OVER THE UDP SOCKET AND VERIFIES THE SERVER RESPONSE
 int transmit() //send buffer[], receive response[]
 {
+   int i;
     time_t tstart, tnow;
     int ackd = 0;
     int timeout = 0;
@@ -313,8 +314,9 @@ int transmit() //send buffer[], receive response[]
     while (!ackd)
     {
         tstart = time(NULL);
+        //CLEAR RX BUFFER
+         for (i = 0;i < BUFFERSIZE;i++) response[i] = 0x00; 
         sendpacket();
-        messageid = (messageid + 1) % 255; //TODO messing here
         timeout = 0;
         while(!timeout)
         {
@@ -322,8 +324,10 @@ int transmit() //send buffer[], receive response[]
             tnow = time(NULL);
             if (rx >= 0)// && 0 == verify())
             {
-                if ((response[KEY_BYTE] == 'k')&&(response[MESSAGE_ID] == messageid)) {
+                if ((response[KEY_BYTE] == 'k')&&(response[MESSAGE_ID] == (messageid+1) %255)) {
+                //if ((response[KEY_BYTE] == 'k')&&(response[MESSAGE_ID] == messageid)) {
                    if (DEBUG) printf("Server acknowledged request. It's VALID.\n");;
+                  messageid = (messageid + 1) % 255; //TODO messing here
                 ackd = 1;
                 timeout = 1;
                 }
@@ -333,7 +337,6 @@ int transmit() //send buffer[], receive response[]
             {
                 if (DEBUG) printf("Client has no received server response, timed out. Resending.\n");
                 timeout = 1;
-               messageid--; //TODO will not work for rollover
             }
         }//while !timeout
     }//while !ackd
@@ -354,7 +357,7 @@ int receive()
  	    response[KEY_BYTE], response[MESSAGE_ID], response[CMD_INT1], response[CMD_INT2]); 
    memcpy(test, response, 4096);
    test[4096] = '\0'; 
-   if (DEBUG) printf("data: %s\n", test);
+   //if (DEBUG) printf("data: %s\n", test);
 
     return rc;
 }
