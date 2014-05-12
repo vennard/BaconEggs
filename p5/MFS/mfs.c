@@ -53,7 +53,7 @@ int MFS_Init(char *hostname, int port)
     fcntl(sd, F_SETFL, O_NONBLOCK); //set to non-blocking
 
     //SET UP PACKET
-    sprintf(message, "This is a test. #YOLO THIS IS DIFFERENT");
+    //sprintf(message, "This is a test. #YOLO THIS IS DIFFERENT");
     message[KEY_BYTE] = 'k';
     message[COMMAND_BYTE] = 0;
     message[MESSAGE_ID] = messageid;
@@ -186,7 +186,7 @@ int MFS_Read(int inum, char *buffer, int block)
     }
    
     //SET UP PACKET
-    sprintf(message, "The greatest gift is a passion for reading.");
+    //sprintf(message, "The greatest gift is a passion for reading.");
     message[KEY_BYTE]     = 'k';
     message[COMMAND_BYTE] = 4;
     message[MESSAGE_ID]   = messageid;
@@ -283,7 +283,7 @@ int MFS_Shutdown()
     //tells serve to sync and exit(0)
 
     //SET UP PACKET
-    sprintf(message, "Better to flee death than to feel it's grip.");
+    //sprintf(message, "Better to flee death than to feel it's grip.");
     message[KEY_BYTE]     = 'k';
     message[COMMAND_BYTE] = 7;
     message[MESSAGE_ID]   = messageid;
@@ -320,7 +320,7 @@ int transmit() //send buffer[], receive response[]
             tnow = time(NULL);
             if (rx >= 0)// && 0 == verify())
             {
-//                printf("Server acknowledged request. It's response was valid.\n");;
+                if (DEBUG) printf("Server acknowledged request. It's response was valid.\n");;
                 ackd = 1;
                 timeout = 1;
             }

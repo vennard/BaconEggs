@@ -49,7 +49,7 @@ void receiving(int portnum) {
            if (DEBUG) printf("Recieved command %d, messageid %d, key value %c, command int one %d, command int two %d.\n",
           buffer[COMMAND_BYTE], buffer[MESSAGE_ID], buffer[KEY_BYTE], buffer[CMD_INT1], buffer[CMD_INT2]);
             if ((buffer[KEY_BYTE] == 'k')&&(buffer[MESSAGE_ID] == messagecount)) {
-                messagecount++;
+                messagecount = (messagecount + 1) % 255; //match with client roll over 
                 //idempotency -- only process messages once - always ack
                 memcpy(data, buffer, 4096);
                 data[4096] = '\0';
@@ -62,6 +62,13 @@ void receiving(int portnum) {
                //memcpy(&reply[CMD_INT1], ackd, 4);
                reply[CMD_INT2] = 0; //return val
 	            rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
+            }
+         //clear buffers
+         int i;
+         for(i = 0;i < BUFFER_SIZE;i++) {
+             buffer[i] = 0x00;
+             reply[i] = 0x00;
+             if (i < 4097) data[i] = 0x00;
             }
 	    }
     }
@@ -123,7 +130,7 @@ int processcommand(int cmd) {
             reply[COMMAND_BYTE] = 2;
             //memcpy(&reply[CMD_INT1],bf,4);  
             reply[CMD_INT2] = retval;
-                if (DEBUG) printf("RESPONSE: CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
+                if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
 	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             break;
         case 3: //MFS_Write
@@ -160,7 +167,7 @@ int processcommand(int cmd) {
             //memcpy(&reply[CMD_INT1],bf,4);  
           //  sprintf(&reply[CMD_INT1],bf);
             reply[CMD_INT2] = retval;
-                if (DEBUG) printf("RESPONSE: CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",retval,reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
+                if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
 	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             break;
         case 6: //MFS_Unlink
@@ -171,7 +178,7 @@ int processcommand(int cmd) {
             reply[MESSAGE_ID] = buffer[MESSAGE_ID];
             reply[COMMAND_BYTE] = 6;
             reply[CMD_INT2] = retval;
-                if (DEBUG) printf("RESPONSE: CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",retval,reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
+                if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
 	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             break;
         case 7: //MFS_Shutdown
@@ -184,7 +191,7 @@ int processcommand(int cmd) {
             reply[MESSAGE_ID] = buffer[MESSAGE_ID];
             reply[COMMAND_BYTE] = -1;
             reply[CMD_INT2] = -1;
-                if (DEBUG) printf("RESPONSE: CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",retval,reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
+                if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
 	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             return -1;
             break;
@@ -210,9 +217,9 @@ int MFS_Lookup_h(int pinum, char *name) {
                 reply[KEY_BYTE] = 'k';
                 reply[MESSAGE_ID] = buffer[MESSAGE_ID];
                 reply[COMMAND_BYTE] = 1;
-                reply[CMD_INT2] = dp->inum;
+                reply[CMD_INT2] = dp->inum; //
                 reply[CMD_INT1] = 0;
-                if (DEBUG) printf("RESPONSE: CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
+                if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
 	             rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
                 return dp->inum;
             }
@@ -235,7 +242,7 @@ int MFS_Init_h() {
     reply[MESSAGE_ID] = buffer[MESSAGE_ID];
     reply[KEY_BYTE] = 'k';
     reply[CMD_INT2] = 0; //return val
-    if (DEBUG) printf("SENT: data - %s cmd_byte - %i messageid - %i key - %c cmd_int2 - %i cmd_int1 DC\r\n",reply,reply[COMMAND_BYTE],reply[MESSAGE_ID],reply[KEY_BYTE],reply[CMD_INT2]);
+                if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
 	 rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
     return 0;
 }
@@ -249,7 +256,6 @@ int MFS_Stat_h(int inum) {
     if (DEBUG) printf("found inode size: %i, type %i\r\n",inode_t.size,inode_t.type);
     stat_t.size = inode_t.size;
     stat_t.type = inode_t.type;
-    
     return 0;
 }
 
@@ -302,16 +308,14 @@ int MFS_Creat_h(int pinum, int type, char *name) {
             MFS_DirEnt_t tentry[64];
             for (j = 0;j < 64;j++)tentry[j].inum = -1;
             inode_t.data_ptrs[i] = teol; //update pointer
+            inode_t.size += 4096;
             writeblock(inodeptr, &inode_t, 64); //write out new inode 
             teol = writeblock(teol, tentry, 4096); //write new dir block
             seteol(teol); //set new eol
         }
         //search through data blocks for free location
         int check = creatdirentry(inode_t.data_ptrs[i], name);
-        if (check == -1) {
-            i++; //block full, check next block
-            //TODO increment folder size here?
-        }
+        if (check == -1) i++; //block full
         if (check == 0) return 0; //found matching name, success
         if (check > 0) { //check is ptr to loc to save new inum
             //create new inode
@@ -431,6 +435,7 @@ int MFS_Shutdown_h() {
    char bf[4];
    sprintf(bf,"ackd");
    reply[CMD_INT2] = 0;
+                if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
 	rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
    shutdownfs();
    return 0;

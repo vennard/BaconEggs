@@ -15,7 +15,7 @@ char rbuf[4096];
 
 void startfs(char* filesystem) {
    int i;
-   printf("Creating new filesystem... ");
+   if (DEBUG) printf("Creating new filesystem... ");
    fd = open(filesystem, O_RDWR | O_CREAT);
    if (fd < 0) printf("Failed to create new filesystem!\r\n");
 
@@ -82,8 +82,8 @@ void startfs(char* filesystem) {
    lseek(fd, 0, SEEK_SET);
    write(fd, &endoflog, 4);
    fsync(fd);
-   printf("eol: %i\r\n",eol);
-   printf(" done!\r\n");
+   if (DEBUG) printf("eol: %i\r\n",eol);
+   if (DEBUG) printf(" done!\r\n");
 }
 
 void shutdownfs() {
@@ -147,35 +147,6 @@ int creatdirentry(int ptr, char *name) {
         tptr += 64;
     }
     return -1; //block is full
-}
-//finds next unallocated ptr
-//ptr - start address of array
-//returns free array locations address
-int freeptr(int ptr) {
-    int c = ptr;
-    int temp = 1;
-    while (temp != 0) {
-       lseek(fd, c, SEEK_SET);  
-       read(fd, &temp, 4); 
-       c += 4;
-    }
-    return c;
-}
-
-//finds entry at imap, inode, ptr address
-//returns address of location
-//returns -1 if invalid
-int findentry(int imap, int inode) {
-    int temp; 
-    int imap_a = 4 + (imap * 4); //get inode_ptrs location
-    lseek(fd, imap_a, SEEK_SET); 
-    read(fd, &temp, 4);   
-    if (temp == 0) return -1; //temp is now ptr to inode_ptr chunck
-    temp = temp + (inode * 4);
-    lseek(fd, temp, SEEK_SET); 
-    read(fd, &temp, 4);  //temp is now pointer to inode
-    if (temp == 0) return -1;
-    return temp;
 }
 
 //returns inode struct of inode with inum
