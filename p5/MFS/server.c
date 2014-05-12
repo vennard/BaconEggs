@@ -8,7 +8,6 @@
 #include "mfs.h"
 
 #define BUFFER_SIZE (4107)
-#define DEBUG (1)
 #define COMMAND_BYTE (BUFFER_SIZE-9)
 #define DATA_BLOCK (0)
 #define KEY_BYTE (BUFFER_SIZE-11)
@@ -42,11 +41,11 @@ int processcommand(int cmd);
 void receiving(int portnum) {
     sd = UDP_Open(portnum);
     assert(sd > -1);
-    printf("SERVER: About to enter receiver waiting loop!\r\n");
+    if (DEBUG) printf("SERVER: About to enter receiver waiting loop!\r\n");
     while (1) {
 	    rc = UDP_Read(sd, &s, buffer, BUFFER_SIZE);
 	    if (rc > 0) {
-	        printf("SERVER:: read %d bytes (message: '%s')\n", rc, buffer);
+	        if(DEBUG) printf("SERVER:: read %d bytes (message: '%s')\n", rc, buffer);
            if (DEBUG) printf("Recieved command %d, messageid %d, key value %c, command int one %d, command int two %d.\n",
           buffer[COMMAND_BYTE], buffer[MESSAGE_ID], buffer[KEY_BYTE], buffer[CMD_INT1], buffer[CMD_INT2]);
             if ((buffer[KEY_BYTE] == 'k')&&(buffer[MESSAGE_ID] == messagecount)) {
@@ -55,7 +54,7 @@ void receiving(int portnum) {
                 memcpy(data, buffer, 4096);
                 data[4096] = '\0';
                 processcommand(buffer[COMMAND_BYTE]);
-                printf("SERVER processing unique message (%d bytes)!\r\n",rc);
+                if (DEBUG) printf("SERVER processing unique message (%d bytes)!\r\n",rc);
             } else { //send dumb ack
                reply[COMMAND_BYTE] = buffer[COMMAND_BYTE];   
                reply[MESSAGE_ID] = buffer[MESSAGE_ID];
@@ -74,7 +73,7 @@ int main(int argc, char *argv[]) {
 
    //check and save off input args
    if (argc != 3) {
-      printf("Incorrect command line arguments: needs server [portnum] [filesystem] \r\n");
+      if (DEBUG)printf("Incorrect command line arguments: needs server [portnum] [filesystem] \r\n");
       return 1;
    } 
    portnum = atoi(argv[1]);
@@ -86,24 +85,6 @@ int main(int argc, char *argv[]) {
    if (fd < 0) startfs(filesystem);
 
    receiving(portnum);
-
-   printf("Starting testing...\r\n");
-   if (MFS_Creat_h(0,0,"newdir") != 0) printf("Error with MFS_Creat_h\r\n");
-   if (MFS_Creat_h(0,1,"newfile") != 0) printf("Error with MFS_Creat_h\r\n");
-   
-   MFS_Lookup_h(0, "newfile");
-   MFS_Stat_h(0);
-   MFS_Stat_h(1);
-   MFS_Stat_h(2);
-   char out[4096];
-   sprintf(out,"testing, once apon a time I could only try and type things that made sense cuz id been programmign too long");
-   if (MFS_Write_h(2, out, 0) == -1) printf("Error with MFS_write\r\n");
-   if (MFS_Read_h(2, rbuf, 0) == -1) printf("error with MFS_read\r\n");
-   if (MFS_Unlink_h(0, "newdir") == -1) printf("Error with MFS_unlink\r\n");
-   if (MFS_Creat_h(0,1,"secondfile") != 0) printf("Error with MFS_Creat_h\r\n");
-   if (MFS_Creat_h(0,0,"secondfolder") != 0) printf("Error with MFS_Creat_h\r\n");
-
-   close(fd);
    return 0;
 }
 
@@ -166,7 +147,7 @@ int processcommand(int cmd) {
             break;
         case 5: //MFS_Creat
             retval = MFS_Creat_h(buffer[CMD_INT1],buffer[CMD_INT2],data);
-            printf("Calling MFS_Creat handler!\r\n");
+            if (DEBUG)printf("Calling MFS_Creat handler!\r\n");
             reply[KEY_BYTE] = 'k';
             reply[MESSAGE_ID] = buffer[MESSAGE_ID];
             reply[COMMAND_BYTE] = 5;

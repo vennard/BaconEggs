@@ -8,7 +8,6 @@
 #include "mfs.h"
 
 #define BUFFERSIZE (4107)
-#define debug (1)
 
 //Message transfer protocol useful defines
 #define COMMAND_BYTE (BUFFERSIZE-9)
@@ -29,26 +28,26 @@ int messageid;
 
 int MFS_Init(char *hostname, int port)
 {
-    if (debug) printf("MFS_Init called with hostname %s and port %d.\n", hostname, port);
+    if (DEBUG) printf("MFS_Init called with hostname %s and port %d.\n", hostname, port);
 
     //INIT VARIABLES
     messageid = 0; //start the messageid count
 
     //PRIMATIVE CHECKS
     if (port < 0 || hostname == NULL){
-        printf("ERROR: MFS_Init received invalid parameters.\n");
+        if (DEBUG) printf("ERROR: MFS_Init received invalid parameters.\n");
         return -1;
     }
 
     //SET UP SOCKET
     sd = UDP_Open(0);
     if (sd < 0){
-        printf("UDP_Open in MFS_Init failed.\n");
+        if (DEBUG) printf("UDP_Open in MFS_Init failed.\n");
         return -1;
     }
     rc = UDP_FillSockAddr(&saddr, hostname, port);
     if (rc < 0){
-        printf("UDP_FillSockAddr in MFS_Init failed.\n");
+        if (DEBUG) printf("UDP_FillSockAddr in MFS_Init failed.\n");
         return -1;
     }
     fcntl(sd, F_SETFL, O_NONBLOCK); //set to non-blocking
@@ -72,7 +71,7 @@ int MFS_Lookup(int pinum, char *name)
     //return inode of name
     //else return -1 (invalid pinum, name does not exist in pinum)
 
-    if (debug) printf("MFS_Lookup called with pinum %d and name %s.\n", pinum, name);
+    if (DEBUG) printf("MFS_Lookup called with pinum %d and name %s.\n", pinum, name);
 
     //PRIMATIVE CHECKS
     if (pinum < 0 || name == NULL || strlen(name) > 60){
@@ -93,7 +92,7 @@ int MFS_Lookup(int pinum, char *name)
     //VERIFY PACKET CONTENTS
     if (response[CMD_INT2] < 0)
     {        
-        printf("ERROR: MFS_Lookup received failing packet.");        
+        if (DEBUG) printf("ERROR: MFS_Lookup received failing packet.");        
         return -1;
     }
     
@@ -105,11 +104,11 @@ int MFS_Stat(int inum, MFS_Stat_t *m)
     //return stat info about file inum
     //return 0, else return -1 if inum doesn't exist
 
-    if (debug) printf("MFS_Stat called with inum %d.\n", inum);
+      if (DEBUG) printf("MFS_Stat called with inum %d.\n", inum);
 
     //PRIMATIVE CHECKS
     if (inum < 0 || m == NULL){
-        printf("ERROR: MFS_LStat received invalid parameters.\n");
+        if (DEBUG) printf("ERROR: MFS_LStat received invalid parameters.\n");
         return -1;
     }
 
@@ -125,17 +124,14 @@ int MFS_Stat(int inum, MFS_Stat_t *m)
     //VERIFY PACKET CONTENTS
     if (response[CMD_INT2] < 0)
     {        
-        printf("ERROR: MFS_Stat received failing packet.");        
+        if (DEBUG) printf("ERROR: MFS_Stat received failing packet.");        
         return -1;
     }
 
     memcpy(m, &response[DATA_BLOCK], 8);
 
-    if(debug) 
-    {
-        printf("m->type = %d\n", m->type);
-        printf("m->size = %d\n", m->size);   
-    }
+    if (DEBUG) printf("m->type = %d\n", m->type);
+    if (DEBUG) printf("m->size = %d\n", m->size);   
 
     return 0;
 }
@@ -149,7 +145,7 @@ int MFS_Write(int inum, char *buffer, int block)
     //CRUDE CHECKS
     if (inum < 0 || block < 0 || buffer == NULL)
     {
-        printf("ERROR: MFS_Write received invalid parameters.\n");
+        if (DEBUG) printf("ERROR: MFS_Write received invalid parameters.\n");
         return -1;
     }
    
@@ -167,7 +163,7 @@ int MFS_Write(int inum, char *buffer, int block)
     //VERIFY PACKET CONTENTS
     if (response[CMD_INT2] < 0)
     {        
-        printf("ERROR: MFS_Write received failing packet.");        
+        if (DEBUG) printf("ERROR: MFS_Write received failing packet.");        
         return -1;
     }
 
@@ -185,7 +181,7 @@ int MFS_Read(int inum, char *buffer, int block)
     //CRUDE CHECKS
     if (inum < 0 || block < 0 || buffer == NULL)
     {
-        printf("ERROR: MFS_Read received invalid parameters.\n");
+        if (DEBUG) printf("ERROR: MFS_Read received invalid parameters.\n");
         return -1;
     }
    
@@ -203,7 +199,7 @@ int MFS_Read(int inum, char *buffer, int block)
     //VERIFY PACKET CONTENTS
     if (response[CMD_INT2] < 0)
     {        
-        printf("ERROR: MFS_Read received failing packet.");        
+        if (DEBUG) printf("ERROR: MFS_Read received failing packet.");        
         return -1;
     }
 
@@ -223,7 +219,7 @@ int MFS_Creat(int pinum, int type, char *name)
     //CRUDE CHECKS
     if (pinum < 0 ||  name == NULL || strlen(name) > 60)
     {
-        printf("ERROR: MFS_Creat received invalid parameters.\n");
+        if (DEBUG) printf("ERROR: MFS_Creat received invalid parameters.\n");
         return -1;
     }
    
@@ -241,7 +237,7 @@ int MFS_Creat(int pinum, int type, char *name)
     //VERIFY PACKET CONTENTS
     if (response[CMD_INT2] < 0)
     {        
-        printf("ERROR: MFS_Creat received failing packet.");        
+        if (DEBUG) printf("ERROR: MFS_Creat received failing packet.");        
         return -1;
     }
 
@@ -258,7 +254,7 @@ int MFS_Unlink(int pinum, char *name)
     //CRUDE CHECKS
     if (pinum < 0 ||  name == NULL || strlen(name) > 60)
     {
-        printf("ERROR: MFS_Unlink received invalid parameters.\n");
+        if (DEBUG) printf("ERROR: MFS_Unlink received invalid parameters.\n");
         return -1;
     }
    
@@ -275,7 +271,7 @@ int MFS_Unlink(int pinum, char *name)
     //VERIFY PACKET CONTENTS
     if (response[CMD_INT2] < 0)
     {        
-        printf("ERROR: MFS_Unlink received failing packet.");        
+        if (DEBUG) printf("ERROR: MFS_Unlink received failing packet.");        
         return -1;
     }
 
@@ -298,7 +294,7 @@ int MFS_Shutdown()
     //VERIFY PACKET CONTENTS
     if (response[CMD_INT2] < 0)
     {        
-        printf("ERROR: MFS_Shutdown received failing packet.");        
+        if (DEBUG) printf("ERROR: MFS_Shutdown received failing packet.");        
         return -1;
     }
 
@@ -331,7 +327,7 @@ int transmit() //send buffer[], receive response[]
             diff = difftime(tnow, tstart);
             if (diff > TIMEOUT)
             {
-                printf("Client has no received server response, timed out. Resending.\n");
+                if (DEBUG) printf("Client has no received server response, timed out. Resending.\n");
                 timeout = 1;
             }
         }//while !timeout
@@ -350,11 +346,11 @@ int receive()
     }
 //    printf("Client : Received message (%d bytes) (%s)\n.", rc, response);
 
-   printf("RX: command: %d, key: %c, id: %d, int1: %d, int2: %d\n", response[COMMAND_BYTE], 
+   if (DEBUG) printf("RX: command: %d, key: %c, id: %d, int1: %d, int2: %d\n", response[COMMAND_BYTE], 
  	    response[KEY_BYTE], response[MESSAGE_ID], response[CMD_INT1], response[CMD_INT2]); 
    memcpy(test, response, 4096);
    test[4096] = '\0'; 
-   printf("data: %s\n", test);
+   if (DEBUG) printf("data: %s\n", test);
 
     return rc;
 }
@@ -364,11 +360,11 @@ int sendpacket()
 {
     rc = UDP_Write(sd, &saddr, message, BUFFERSIZE);
  
-    printf("TX: command: %d, key: %c, id: %d, int1: %d, int2: %d\n", message[COMMAND_BYTE], 
+    if (DEBUG) printf("TX: command: %d, key: %c, id: %d, int1: %d, int2: %d\n", message[COMMAND_BYTE], 
  	    message[KEY_BYTE], message[MESSAGE_ID], message[CMD_INT1], message[CMD_INT2]); 
    memcpy(test, message, 4096);
    test[4096] = '\0'; 
-   printf("data: %s\n", test);
+   if (DEBUG) printf("data: %s\n", test);
 
    assert(rc > -1);
    return 0;

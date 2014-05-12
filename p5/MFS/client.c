@@ -31,7 +31,7 @@ char buffer[BUFFER_SIZE];
 struct sockaddr_in saddr;
 int sd, rc;
 int messageid;
-	    printf("CLIENT:: read %d bytes (message: '%s')\n", rc, buffer);
+	    if (DEBUG) printf("CLIENT:: read %d bytes (message: '%s')\n", rc, buffer);
         return 0;
     }
     return 1;
@@ -39,9 +39,9 @@ int messageid;
 
 //sends packet out through socket
 int sendpacket(char message[BUFFER_SIZE]){
-    printf("CLIENT:: about to send message (%d)\n", rc);
+    if (DEBUG) printf("CLIENT:: about to send message (%d)\n", rc);
     rc = UDP_Write(sd, &saddr, message, BUFFER_SIZE);
-    printf("CLIENT:: sent message (%d)\n", rc);
+    if (DEBUG) printf("CLIENT:: sent message (%d)\n", rc);
     return 0;
 }
 
@@ -65,14 +65,14 @@ int transmit(char message[BUFFER_SIZE]) {
             int rxd = receive();
             tnow = time(NULL);
             if ((rxd == 0)&&(messageid == (int)buffer[0])&&(buffer[1] == 'a')&&(buffer[2] == 'c')&&(buffer[3] == 'k')) { //got valid ack
-                printf("SUCCESS received correct acknowledge!\r\n");
+                if (DEBUG) printf("SUCCESS received correct acknowledge!\r\n");
                 ackd = 1;
                 timeout = 1;
             }
             int diff = difftime(tnow, tstart);
             if (diff > TIMEOUT) {
                 timeout = 1;
-                printf("Timed out! Resending...\r\n");
+                if (DEBUG) printf("Timed out! Resending...\r\n");
             }
         }
     }

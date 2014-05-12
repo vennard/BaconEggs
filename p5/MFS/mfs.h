@@ -6,6 +6,8 @@
 
 #define MFS_BLOCK_SIZE   (4096)
 
+#define DEBUG (0)
+
 typedef struct __MFS_Stat_t {
     int type;   // MFS_DIRECTORY or MFS_REGULAR
     int size;   // bytes
