@@ -92,9 +92,10 @@ int main(int argc, char *argv[]) {
 //necessary data in buffer to be sent back out as ack
 //returns 0 on success, -1 on failure
 int processcommand(int cmd) {
-    int retval;
+    int retval, i;
     char bf[5];
-    sprintf(bf,"ackd\0");
+    char clear = 0x00;
+    sprintf(bf,"ackd");
     switch (cmd) {
         case 0: //MFS_Init
             MFS_Init_h();
@@ -102,17 +103,19 @@ int processcommand(int cmd) {
         case 1: //MFS_Lookup
             retval = MFS_Lookup_h(buffer[CMD_INT1], data);
             if (retval == -1) {
+                for(i = 0;i < 4096;i++)reply[i] = clear;  
                 reply[KEY_BYTE] = 'k';
                 reply[MESSAGE_ID] = buffer[MESSAGE_ID];
                 reply[COMMAND_BYTE] = 1;
                 reply[CMD_INT1] = 0;
                 reply[CMD_INT2] = -1;
-                if (DEBUG) printf("RESPONSE: CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
+                if (DEBUG) printf("RESPONSE: MSG - %s CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply,reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
 	             rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             }
             break;
         case 2: //MFS_Stat
             retval = MFS_Stat_h(buffer[CMD_INT1]);
+            for(i = 0;i < 4096;i++)reply[i] = clear;  
             //send response
             memcpy(reply, &stat_t, sizeof(stat_t));
             reply[KEY_BYTE] = 'k';
@@ -125,6 +128,7 @@ int processcommand(int cmd) {
             break;
         case 3: //MFS_Write
             retval = MFS_Write_h(buffer[CMD_INT1],data,buffer[CMD_INT2]);
+            for(i = 0;i < 4096;i++)reply[i] = clear;  
             //send response
             reply[KEY_BYTE] = 'k';
             reply[MESSAGE_ID] = buffer[MESSAGE_ID];
@@ -136,6 +140,7 @@ int processcommand(int cmd) {
             break;
         case 4: //MFS_Read
             retval = MFS_Read_h(buffer[CMD_INT1],rbuf,buffer[CMD_INT2]);
+            for(i = 0;i < 4096;i++)reply[i] = clear;  
             memcpy(reply,rbuf,4096);
             reply[KEY_BYTE] = 'k';
             reply[MESSAGE_ID] = buffer[MESSAGE_ID];
@@ -148,6 +153,7 @@ int processcommand(int cmd) {
         case 5: //MFS_Creat
             retval = MFS_Creat_h(buffer[CMD_INT1],buffer[CMD_INT2],data);
             if (DEBUG)printf("Calling MFS_Creat handler!\r\n");
+            for(i = 0;i < 4096;i++)reply[i] = clear;  
             reply[KEY_BYTE] = 'k';
             reply[MESSAGE_ID] = buffer[MESSAGE_ID];
             reply[COMMAND_BYTE] = 5;
@@ -159,6 +165,7 @@ int processcommand(int cmd) {
             break;
         case 6: //MFS_Unlink
             retval = MFS_Unlink_h(buffer[CMD_INT1],buffer);
+            for(i = 0;i < 4096;i++)reply[i] = clear;  
             reply[CMD_INT2] = retval;
             reply[KEY_BYTE] = 'k';
             reply[MESSAGE_ID] = buffer[MESSAGE_ID];
@@ -168,9 +175,11 @@ int processcommand(int cmd) {
 	         rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
             break;
         case 7: //MFS_Shutdown
+            for(i = 0;i < 4096;i++)reply[i] = clear;  
             MFS_Shutdown_h();
             break;
         default: //send failed response
+            for(i = 0;i < 4096;i++)reply[i] = clear;  
             reply[KEY_BYTE] = 'k';
             reply[MESSAGE_ID] = buffer[MESSAGE_ID];
             reply[COMMAND_BYTE] = -1;
@@ -251,13 +260,12 @@ int MFS_Write_h(int inum, char *buf, int block) {
    if (inode_t.type != 1) return -1; //fail on not regular file
    if ((block < 0)||(block > 13)) return -1; //fail on invalid block
    int eol = geteol();
-   int blkptr = eol;
+   inode_t.data_ptrs[block] = eol;
    eol = writeblock(eol, buf, 4096); 
-   inode_t.data_ptrs[block] = blkptr;
    inode_t.size += 4096;
    writeblock(inodeptr, &inode_t, 64);
    callfsync();
-   if (DEBUG) printf("saved new block to %i and increased inode size to %i\r\n",blkptr,inode_t.size);
+   if (DEBUG) printf("saved new block to %i and increased inode size to %i\r\n",inode_t.data_ptrs[block],inode_t.size);
    return 0;
 }
 
@@ -275,14 +283,29 @@ int MFS_Read_h(int inum, char *buffer, int block) {
 //creates new file or directory in the parent directory pinum
 int MFS_Creat_h(int pinum, int type, char *name) {
     if (DEBUG) printf("MFS_Creat(%i, %i, %s): ",pinum,type,name);    
-    if (getinode(pinum) == -1) return -1; //fail on bad pinum
+    int inodeptr = getinode(pinum);
+    if (inodeptr == -1) return -1; //fail on bad pinum
     if (DEBUG) printf("parent inode - type: %i, size: %i, ptr[0]: %i.   ",inode_t.type,inode_t.size,inode_t.data_ptrs[0]);
     if (inode_t.type != 0) return -1; //inum not directory
     if ((type < 0)||(type > 1)) return -1; //invalid type
     if (strlen(name) > 60) return -1; //name too long
     int i = 0; 
+    int done = 0;
     //search through inode ptrs for free entry
-    while (inode_t.data_ptrs[i] != 0) {
+    while (!done) {
+        if(i > 13) return -1; //directory full
+        //Check to see if ptr is empty, if so check if its the last block if not create new block of directory points
+        if (inode_t.data_ptrs[i] == 0) {
+            //create new directory block      
+            int j;
+            int teol = geteol();
+            MFS_DirEnt_t tentry[64];
+            for (j = 0;j < 64;j++)tentry[j].inum = -1;
+            inode_t.data_ptrs[i] = teol; //update pointer
+            writeblock(inodeptr, &inode_t, 64); //write out new inode 
+            teol = writeblock(teol, tentry, 4096); //write new dir block
+            seteol(teol); //set new eol
+        }
         //search through data blocks for free location
         int check = creatdirentry(inode_t.data_ptrs[i], name);
         if (check == -1) {

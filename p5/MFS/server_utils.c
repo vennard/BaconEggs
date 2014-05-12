@@ -127,7 +127,6 @@ int nextinum() {
 //returns 0 if found matching name
 //returns ptr to where new inum should be saved if successfully inserted new entry
 //returns -1 if failed
-//TESTED TODO GOOD
 int creatdirentry(int ptr, char *name) {
     //printf("called creatdirentry looking at ptr: %i to add name %s\r\n",ptr,name);
     int tptr = ptr;

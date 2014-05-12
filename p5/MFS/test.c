@@ -13,7 +13,6 @@ int main (int argc, char *argv[])
 	char name2[] = "bar.txt";
 	char buffer[4096];
 	MFS_Stat_t m;
-	int error = 0;
 	char *host = argv[1];
 	int port = atoi(argv[2]);
 
