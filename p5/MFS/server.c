@@ -119,7 +119,16 @@ int processcommand(int cmd) {
             MFS_Init_h();
             break;
         case 1: //MFS_Lookup
-            MFS_Lookup_h(buffer[CMD_INT1], data);
+            retval = MFS_Lookup_h(buffer[CMD_INT1], data);
+            if (retval == -1) {
+                reply[KEY_BYTE] = 'k';
+                reply[MESSAGE_ID] = buffer[MESSAGE_ID];
+                reply[COMMAND_BYTE] = 1;
+                reply[CMD_INT1] = 0;
+                reply[CMD_INT2] = -1;
+                if (DEBUG) printf("RESPONSE: CMD_INT2 - %i KEY - %c MESSAGEID - %i CMDBYTE - %i CMDINT1  - %i\r\n",reply[CMD_INT2],reply[KEY_BYTE],reply[MESSAGE_ID],reply[COMMAND_BYTE],reply[CMD_INT1]);
+	             rc = UDP_Write(sd, &s, reply, BUFFER_SIZE);
+            }
             break;
         case 2: //MFS_Stat
             retval = MFS_Stat_h(buffer[CMD_INT1]);
