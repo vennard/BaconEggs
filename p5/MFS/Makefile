@@ -26,7 +26,7 @@ server: server.c
 	gcc $(FLAGS_R) server server.c udp.o server_utils.o $(FLAG_SHOW_ERROR)
 
 clean:
-	-rm -f mfs.o client server server.o libmfs.so udp.o
+	-rm -f mfs.o server_utils.o client server server.o libmfs.so udp.o
 
 run: client
 	./client
