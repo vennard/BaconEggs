@@ -82,11 +82,11 @@ int transmit(char message[BUFFER_SIZE]) {
 
 int main(int argc, char *argv[]) {
     setupconnection();
-    char sendingthis[BUFFER_SIZE];
-    sprintf(sendingthis, "well i guess this does work -- suspiciously slow though");
-    transmit(sendingthis);
-    sprintf(sendingthis, "trying to send something else !!!");
-    transmit(sendingthis);
+    //char sendingthis[BUFFER_SIZE];
+    //sprintf(sendingthis, "well i guess this does work -- suspiciously slow though");
+    //transmit(sendingthis);
+    //sprintf(sendingthis, "trying to send something else !!!");
+    //transmit(sendingthis);
     //If you send a request that wants data back it will be put into buffer after transmission
     //remember I use the last 3 bytes so those will be unuseable
     return 0;
