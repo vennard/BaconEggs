@@ -21,6 +21,7 @@
 
 char message[BUFFERSIZE];
 char response[BUFFERSIZE];
+char test[4097];
 struct sockaddr_in saddr;
 struct sockaddr_in raddr;
 int sd, rc; //socket descriptor, return code
@@ -153,7 +154,13 @@ int MFS_Write(int inum, char *buffer, int block)
     }
    
     //SET UP PACKET
-    memcpy(message, buffer, BUFFERSIZE);
+<<<<<<< HEAD
+    memcpy(message, buffer, 4096);
+=======
+    //memcpy(message, buffer, BUFFERSIZE);
+    //TODO testing below
+    memcpy(&message[0], &buffer[0], BUFFERSIZE);
+>>>>>>> b72c2c4cc14368948858f3432a9cfd19db9c598d
     message[KEY_BYTE]     = 'k';
     message[COMMAND_BYTE] = 3;
     message[MESSAGE_ID]   = messageid;
@@ -206,7 +213,7 @@ int MFS_Read(int inum, char *buffer, int block)
         return -1;
     }
 
-    //*buffer = 
+    memcpy(buffer, response, 4096);    
 
     return 0;
 }
@@ -348,17 +355,29 @@ int receive()
         return -1;
     }
 //    printf("Client : Received message (%d bytes) (%s)\n.", rc, response);
+
+   printf("RX: command: %d, key: %c, id: %d, int1: %d, int2: %d\n", response[COMMAND_BYTE], 
+       response[KEY_BYTE], response[MESSAGE_ID], response[CMD_INT1], response[CMD_INT2]); 
+   memcpy(test, response, 4096);
+   test[4096] = '\0'; 
+   printf("data: %s\n", test);
+
     return rc;
 }
 
 //ATTEMPTS TO SEND A PACKET OVER THE UDP SOCKET
 int sendpacket()
 {
-//    printf("Client : Sending message..\n");
     rc = UDP_Write(sd, &saddr, message, BUFFERSIZE);
-    assert(rc > -1);
-//    printf("Client : Sent message..\n");
-    return 0;
+ 
+    printf("TX: command: %d, key: %c, id: %d, int1: %d, int2: %d\n", message[COMMAND_BYTE], 
+       message[KEY_BYTE], message[MESSAGE_ID], message[CMD_INT1], message[CMD_INT2]); 
+   memcpy(test, message, 4096);
+   test[4096] = '\0'; 
+   printf("data: %s\n", test);
+
+   assert(rc > -1);
+   return 0;
 }
 
 //CHECKS THAT RESPONSE IS VALID FOR THE SENT BUFFER
@@ -371,4 +390,5 @@ int verify()
         return 0;
     return -1;
 }
+
 
