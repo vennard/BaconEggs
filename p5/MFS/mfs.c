@@ -154,13 +154,7 @@ int MFS_Write(int inum, char *buffer, int block)
     }
    
     //SET UP PACKET
-<<<<<<< HEAD
     memcpy(message, buffer, 4096);
-=======
-    //memcpy(message, buffer, BUFFERSIZE);
-    //TODO testing below
-    memcpy(&message[0], &buffer[0], BUFFERSIZE);
->>>>>>> b72c2c4cc14368948858f3432a9cfd19db9c598d
     message[KEY_BYTE]     = 'k';
     message[COMMAND_BYTE] = 3;
     message[MESSAGE_ID]   = messageid;
