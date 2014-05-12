@@ -154,9 +154,13 @@ int MFS_Write(int inum, char *buffer, int block)
     }
    
     //SET UP PACKET
-    //memcpy(message, buffer, 4096);
+<<<<<<< HEAD
+    memcpy(message, buffer, 4096);
+=======
+    //memcpy(message, buffer, BUFFERSIZE);
     //TODO testing below
     memcpy(&message[0], &buffer[0], BUFFERSIZE);
+>>>>>>> b72c2c4cc14368948858f3432a9cfd19db9c598d
     message[KEY_BYTE]     = 'k';
     message[COMMAND_BYTE] = 3;
     message[MESSAGE_ID]   = messageid;
@@ -353,7 +357,7 @@ int receive()
 //    printf("Client : Received message (%d bytes) (%s)\n.", rc, response);
 
    printf("RX: command: %d, key: %c, id: %d, int1: %d, int2: %d\n", response[COMMAND_BYTE], 
-       response[KEY_BYTE], response[MESSAGE_ID], response[CMD_INT1], response[CMD_INT2]); 
+ 	    response[KEY_BYTE], response[MESSAGE_ID], response[CMD_INT1], response[CMD_INT2]); 
    memcpy(test, response, 4096);
    test[4096] = '\0'; 
    printf("data: %s\n", test);
@@ -367,7 +371,7 @@ int sendpacket()
     rc = UDP_Write(sd, &saddr, message, BUFFERSIZE);
  
     printf("TX: command: %d, key: %c, id: %d, int1: %d, int2: %d\n", message[COMMAND_BYTE], 
-       message[KEY_BYTE], message[MESSAGE_ID], message[CMD_INT1], message[CMD_INT2]); 
+ 	    message[KEY_BYTE], message[MESSAGE_ID], message[CMD_INT1], message[CMD_INT2]); 
    memcpy(test, message, 4096);
    test[4096] = '\0'; 
    printf("data: %s\n", test);
@@ -386,5 +390,4 @@ int verify()
         return 0;
     return -1;
 }
-
 
