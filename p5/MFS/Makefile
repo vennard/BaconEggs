@@ -14,7 +14,7 @@ udp.o: udp.c $(HEADERS)
 	gcc $(FLAGS_L) udp.c $(FLAG_SHOW_ERROR)
 
 mfs.o: mfs.c $(HEADERS)
-	gcc $(FLAGS_L) mfs.c udp.o $(FLAG_SHOW_ERROR)
+	gcc $(FLAGS_L) mfs.c  $(FLAG_SHOW_ERROR)
 
 libmfs.so: mfs.o 
 	gcc $(FLAGS_S) libmfs.so mfs.o udp.o  
